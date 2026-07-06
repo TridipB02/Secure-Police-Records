@@ -30,6 +30,7 @@ public class RecordService {
     private final HashUtil hashUtil;
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
+    private final FabricService fabricService;
 
     @Transactional
     public PoliceRecordResponse createRecord(PoliceRecordRequest request,
@@ -66,6 +67,17 @@ public class RecordService {
                 "Police record created: " + request.getRecordType(),
                 null
         );
+
+        String txId = fabricService.storeRecordHash(
+                recordId,
+                currentHash,
+                request.getRecordType(),
+                officerUsername
+        );
+        if (txId != null) {
+                record.setBlockchainTxId(txId);
+                policeRecordRepository.save(record);
+        }
 
         return mapToResponse(record, request.getContent());
     }
@@ -111,6 +123,17 @@ public class RecordService {
                 null
         );
 
+        String txId = fabricService.storeRecordHash(
+                request.getExistingRecordId(),
+                currentHash,
+                request.getRecordType(),
+                officerUsername
+        );
+        if (txId != null) {
+                updatedRecord.setBlockchainTxId(txId);
+                policeRecordRepository.save(updatedRecord);
+        }
+
         return mapToResponse(updatedRecord, request.getContent());
     }
 
@@ -154,12 +177,20 @@ public class RecordService {
             status = "TAMPERED - Content decryption failed, data corrupted";
         }
 
+        boolean fabricVerified = false;
+        String blockchainHash = "Not anchored yet";
+
+        if (latest.getBlockchainTxId() != null) {
+            fabricVerified = fabricService.verifyRecordIntegrity(
+                    recordId, latest.getCurrentHash());
+            blockchainHash = latest.getBlockchainTxId();
+        }
+
         return TamperCheckResponse.builder()
                 .recordId(recordId)
-                .status(status)
+                .status(tampered ? "TAMPERED" : "INTACT")
                 .dbHash(latest.getCurrentHash())
-                .blockchainHash(latest.getBlockchainTxId() != null
-                        ? latest.getBlockchainTxId() : "Not anchored yet")
+                .blockchainHash(blockchainHash)
                 .tampered(tampered)
                 .checkedAt(LocalDateTime.now().toString())
                 .build();
