@@ -33,7 +33,7 @@ public class FirearmService {
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
     private final FabricService fabricService;
-    
+
     @Transactional
     public FirearmResponse applyForLicense(FirearmRequest request) {
         Citizen citizen = citizenRepository
@@ -129,6 +129,28 @@ public class FirearmService {
                 "Status updated to: " + newStatus.name(),
                 null
         );
+
+        String txId = fabricService.storeFirearmHash(
+                application.getApplicationNumber(),
+                application.getLicenseNumber(),
+                application.getCitizen().getReferenceNumber(),
+                application.getWeaponType(),
+                application.getReportHash(),
+                newStatus.name(),
+                officerUsername
+        );
+        if (txId != null) {
+            application.setBlockchainTxId(txId);
+            firearmRepository.save(application);
+        }
+
+        if (newStatus == FirearmStatus.REVOKED) {
+            fabricService.revokeFirearmLicense(
+                    application.getApplicationNumber(),
+                    request.getReason(),
+                    officerUsername
+            );
+        }
 
         return mapToResponse(application);
     }
