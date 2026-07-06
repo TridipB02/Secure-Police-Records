@@ -32,7 +32,8 @@ fabric:
   network-config-path: /path/to/connection-profile.yaml
   channel-name: policechannel
   chaincode-name: policerecord
-
+  msp-id: Org1MSP
+  
 crypto:
   aes-secret: ${AES_SECRET}
   aes-salt: ${AES_SALT}
