@@ -12,7 +12,7 @@ import com.secure.policerecord.util.ReferenceGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.secure.policerecord.fabric.FabricService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +28,7 @@ public class KycService {
     private final HashUtil hashUtil;
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
+    private final FabricService fabricService;
 
     @Transactional
     public KycResponse submitKycRequest(KycSubmitRequest request) {
@@ -107,6 +108,18 @@ public class KycService {
                 "KYC request " + newStatus.name() + " by officer",
                 null
         );
+
+        String txId = fabricService.storeKycHash(
+                kycRequest.getRequestNumber(),
+                kycRequest.getCitizen().getReferenceNumber(),
+                kycRequest.getReportHash(),
+                newStatus.name(),
+                officerUsername
+        );
+        if (txId != null) {
+            kycRequest.setBlockchainTxId(txId);
+            kycRepository.save(kycRequest);
+        }
 
         return mapToResponse(kycRequest);
     }
