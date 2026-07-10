@@ -45,6 +45,9 @@ public class User {
     @Column(name = "station_code")
     private String stationCode;
 
+    @Column(name = "citizen_reference_number")
+    private String citizenReferenceNumber;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 

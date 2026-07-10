@@ -62,6 +62,7 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .role(request.getRole())
+                .citizenReferenceNumber(request.getCitizenReferenceNumber())
                 .badgeNumber(request.getBadgeNumber())
                 .stationCode(request.getStationCode())
                 .isActive(true)

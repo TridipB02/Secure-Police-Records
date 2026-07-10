@@ -27,4 +27,5 @@ public class RegisterRequest {
 
     private String badgeNumber;
     private String stationCode;
+    private String citizenReferenceNumber;
 }
