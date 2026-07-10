@@ -14,12 +14,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.secure.policerecord.fabric.FabricService;
-import com.secure.policerecord.repository.CertificateRepository;
-import com.secure.policerecord.model.CertificateStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.secure.policerecord.repository.CertificateRepository;
+import com.secure.policerecord.model.CertificateStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +43,15 @@ public class FirearmService {
                 .findByReferenceNumber(request.getCitizenReferenceNumber())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Citizen not found: " + request.getCitizenReferenceNumber()));
+
+        //require a VERIFIED KYC before accepting a firearm application
+        List<KycRequest> kycRequests = kycRepository.findByCitizenId(citizen.getId());
+        boolean hasVerifiedKyc = kycRequests.stream()
+                .anyMatch(k -> k.getStatus() == KycStatus.VERIFIED);
+        if (!hasVerifiedKyc) {
+            throw new BadRequestException(
+                    "Cannot apply for firearm license: KYC verification required first");
+        }
 
         List<FirearmApplication> existing = firearmRepository
                 .findByCitizenId(citizen.getId());
@@ -96,6 +105,18 @@ public class FirearmService {
 
         FirearmStatus newStatus = FirearmStatus.valueOf(
                 request.getStatus().toUpperCase());
+
+        //require a CLEAR antecedent report before approving
+        if (newStatus == FirearmStatus.APPROVED) {
+            List<AntecedentReport> reports = antecedentRepository
+                    .findByCitizenId(application.getCitizen().getId());
+            boolean hasClearReport = reports.stream()
+                    .anyMatch(r -> r.getOverallStatus() == AntecedentStatus.CLEAR);
+            if (!hasClearReport) {
+                throw new BadRequestException(
+                        "Cannot approve: no CLEAR antecedent report found for this citizen");
+            }
+        }
 
         application.setStatus(newStatus);
 
@@ -170,6 +191,7 @@ public class FirearmService {
         return mapToResponse(application);
     }
 
+    @Transactional(readOnly = true)
     public FirearmResponse getApplicationByNumber(String applicationNumber) {
         FirearmApplication application = firearmRepository
                 .findByApplicationNumber(applicationNumber)
@@ -178,6 +200,7 @@ public class FirearmService {
         return mapToResponse(application);
     }
 
+    @Transactional(readOnly = true)
     public FirearmResponse getLicenseByNumber(String licenseNumber) {
         FirearmApplication application = firearmRepository
                 .findByLicenseNumber(licenseNumber)
@@ -186,6 +209,7 @@ public class FirearmService {
         return mapToResponse(application);
     }
 
+    @Transactional(readOnly = true)
     public List<FirearmResponse> getApplicationsByCitizen(UUID citizenId) {
         return firearmRepository.findByCitizenId(citizenId)
                 .stream()
@@ -193,6 +217,7 @@ public class FirearmService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<FirearmResponse> getApplicationsByStatus(String status) {
         FirearmStatus firearmStatus = FirearmStatus.valueOf(status.toUpperCase());
         return firearmRepository.findByStatus(firearmStatus)
@@ -201,6 +226,7 @@ public class FirearmService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<FirearmResponse> getAllApplications() {
         return firearmRepository.findAll()
                 .stream()
