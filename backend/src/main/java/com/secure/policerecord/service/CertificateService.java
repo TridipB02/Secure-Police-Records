@@ -251,4 +251,27 @@ public class CertificateService {
                 .revocationReason(certificate.getRevocationReason())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public com.secure.policerecord.response.CertificateVerifyResponse verifyCertificatePublic(String certificateId) {
+        Certificate certificate = certificateRepository
+                .findByCertificateId(certificateId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Certificate not found: " + certificateId));
+
+        return com.secure.policerecord.response.CertificateVerifyResponse.builder()
+                .certificateId(certificate.getCertificateId())
+                .certificateType(certificate.getCertificateType())
+                .status(certificate.getStatus().name())
+                .issueDate(certificate.getIssueDate() != null
+                        ? certificate.getIssueDate().toString() : null)
+                .expiryDate(certificate.getExpiryDate() != null
+                        ? certificate.getExpiryDate().toString() : null)
+                .documentHash(certificate.getDocumentHash())
+                .blockchainTxId(certificate.getBlockchainTxId())
+                .revokedAt(certificate.getRevokedAt() != null
+                        ? certificate.getRevokedAt().toString() : null)
+                .revocationReason(certificate.getRevocationReason())
+                .build();
+    }
 }

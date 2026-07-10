@@ -44,10 +44,10 @@ public class CertificateController {
     }
 
     @GetMapping("/verify/{certificateId}")
-    public ResponseEntity<ApiResponse<CertificateResponse>> verifyCertificate(
+    public ResponseEntity<ApiResponse<com.secure.policerecord.response.CertificateVerifyResponse>> verifyCertificate(
             @PathVariable String certificateId) {
-        CertificateResponse response = certificateService
-                .verifyCertificate(certificateId);
+        com.secure.policerecord.response.CertificateVerifyResponse response = certificateService
+                .verifyCertificatePublic(certificateId);
         return ResponseEntity.ok(
                 ApiResponse.success("Certificate verified successfully", response));
     }
