@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.secure.policerecord.fabric.FabricService;
+import com.secure.policerecord.repository.CertificateRepository;
+import com.secure.policerecord.model.CertificateStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class FirearmService {
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
     private final FabricService fabricService;
+    private final CertificateRepository certificateRepository;
 
     @Transactional
     public FirearmResponse applyForLicense(FirearmRequest request) {
@@ -113,6 +116,18 @@ public class FirearmService {
                 application.setRevocationReasonEncrypted(
                         cryptoUtil.encrypt(request.getReason()));
             }
+            // Auto-revoke linked certificate
+            certificateRepository.findByCitizenId(application.getCitizen().getId())
+                    .stream()
+                    .filter(c -> c.getReferenceId().equals(application.getId())
+                            && c.getStatus() == CertificateStatus.VALID)
+                    .forEach(c -> {
+                        c.setStatus(CertificateStatus.REVOKED);
+                        c.setRevokedAt(LocalDateTime.now());
+                        c.setRevocationReason(
+                                request.getReason() != null ? request.getReason() : "License revoked");
+                        certificateRepository.save(c);
+                    });
         } else {
             application.setAssignedOfficer(officer);
         }
