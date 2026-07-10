@@ -98,7 +98,6 @@ export default function VerifyCertificate() {
               <div className="panel-body">
                 <div className="detail-grid">
                   <div className="detail-item"><label>Certificate ID</label><div><LedgerTag>{cert.certificateId}</LedgerTag></div></div>
-                  <div className="detail-item"><label>Issued by</label><div>{cert.issuedBy}</div></div>
                   <div className="detail-item"><label>Issue date</label><div>{cert.issueDate ? new Date(cert.issueDate).toLocaleDateString() : '—'}</div></div>
                   <div className="detail-item"><label>Expiry date</label><div>{cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString() : '—'}</div></div>
                   <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
