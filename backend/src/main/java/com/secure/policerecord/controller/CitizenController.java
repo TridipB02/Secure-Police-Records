@@ -44,7 +44,7 @@ public class CitizenController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'POLICE_OFFICER', 'ANTECEDENT_OFFICER', 'LICENSING_AUTHORITY')")
     public ResponseEntity<ApiResponse<List<CitizenResponse>>> getAllCitizens() {
         List<CitizenResponse> response = citizenService.getAllCitizens();
         return ResponseEntity.ok(
