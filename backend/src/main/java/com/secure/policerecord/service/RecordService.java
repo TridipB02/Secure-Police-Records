@@ -137,6 +137,7 @@ public class RecordService {
         return mapToResponse(updatedRecord, request.getContent());
     }
 
+    @Transactional(readOnly = true)
     public PoliceRecordResponse getLatestRecord(String recordId) {
         PoliceRecord record = policeRecordRepository
                 .findTopByRecordIdOrderByVersionDesc(recordId)
@@ -146,6 +147,7 @@ public class RecordService {
         return mapToResponse(record, content);
     }
 
+    @Transactional(readOnly = true)
     public List<PoliceRecordResponse> getRecordHistory(String recordId) {
         List<PoliceRecord> records = policeRecordRepository
                 .findByRecordIdOrderByVersionDesc(recordId);
@@ -156,7 +158,8 @@ public class RecordService {
                 .map(r -> mapToResponse(r, cryptoUtil.decrypt(r.getContentEncrypted())))
                 .collect(Collectors.toList());
     }
-
+    
+    @Transactional(readOnly = true)
     public TamperCheckResponse verifyRecord(String recordId) {
         PoliceRecord latest = policeRecordRepository
                 .findTopByRecordIdOrderByVersionDesc(recordId)
