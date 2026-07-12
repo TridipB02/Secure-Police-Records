@@ -4,8 +4,9 @@ import Navbar from '../components/Navbar';
 import LedgerTag from '../components/LedgerTag';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
-const TABS = ['Overview', 'Register user', 'All citizens'];
+const TABS = ['Overview', 'Register user', 'All citizens', 'All users'];
 const ROLES = ['CITIZEN', 'POLICE_OFFICER', 'ANTECEDENT_OFFICER', 'LICENSING_AUTHORITY', 'AUDIT_OFFICER', 'ADMIN'];
 
 const CONSOLES = [
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
         {tab === 'Overview' && <OverviewPanel />}
         {tab === 'Register user' && <RegisterUserPanel />}
         {tab === 'All citizens' && <AllCitizensPanel />}
+        {tab === 'All users' && <AllUsersPanel />}
       </main>
     </>
   );
@@ -64,7 +66,6 @@ function OverviewPanel() {
       }
     };
     load();
-    // eslint-disable-next-line
   }, []);
 
   return (
@@ -226,6 +227,98 @@ function AllCitizensPanel() {
                     <td>{c.email}</td>
                     <td>{c.idProofType}</td>
                     <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AllUsersPanel() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingUsername, setDeletingUsername] = useState(null);
+  const toast = useToast();
+  const { user: currentUser } = useAuth();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/auth/users');
+      setUsers(unwrap(res) || []);
+    } catch (err) {
+      toast.error('Could not load users', apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const handleDelete = async (username) => {
+    if (!window.confirm(`Delete user "${username}"? This cannot be undone. Their citizen record and history, if any, will be preserved.`)) {
+      return;
+    }
+    setDeletingUsername(username);
+    try {
+      await api.delete(`/api/auth/users/${username}`);
+      toast.success('User deleted', username);
+      setUsers((prev) => prev.filter((u) => u.username !== username));
+    } catch (err) {
+      toast.error('Delete failed', apiErrorMessage(err));
+    } finally {
+      setDeletingUsername(null);
+    }
+  };
+
+  return (
+    <div className="panel">
+      <div className="panel-header">
+        <h2>All users</h2>
+        <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+      </div>
+      <div className="panel-body" style={{ padding: 0 }}>
+        {loading ? (
+          <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+        ) : users.length === 0 ? (
+          <div className="empty-row">No users found.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Username</th><th>Full name</th><th>Email</th><th>Role</th>
+                  <th>Badge</th><th>Station</th><th>Citizen ref</th><th>Created</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.username}>
+                    <td>{u.username}</td>
+                    <td>{u.fullName}</td>
+                    <td>{u.email}</td>
+                    <td>{u.role}</td>
+                    <td>{u.badgeNumber || '—'}</td>
+                    <td>{u.stationCode || '—'}</td>
+                    <td>{u.citizenReferenceNumber ? <LedgerTag>{u.citizenReferenceNumber}</LedgerTag> : '—'}</td>
+                    <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+                    <td>
+                      {u.username === currentUser?.username ? (
+                        <span style={{ fontSize: 11.5, color: 'var(--ink-soft)' }}>You</span>
+                      ) : (
+                        <button
+                          className="btn btn-danger btn-sm"
+                          disabled={deletingUsername === u.username}
+                          onClick={() => handleDelete(u.username)}
+                        >
+                          {deletingUsername === u.username ? 'Deleting…' : 'Delete'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
