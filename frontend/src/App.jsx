@@ -4,6 +4,7 @@ import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 import Login from './pages/Login';
+import Register from './pages/Register';
 import CitizenDashboard from './pages/CitizenDashboard';
 import OfficerDashboard from './pages/OfficerDashboard';
 import AntecedentDashboard from './pages/AntecedentDashboard';
@@ -20,6 +21,7 @@ export default function App() {
           <div className="shell">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               <Route path="/verify/:certId" element={<VerifyCertificate />} />
 
               <Route path="/citizen" element={

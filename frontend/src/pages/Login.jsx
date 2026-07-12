@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useAuth, ROLE_HOME } from '../context/AuthContext';
 
@@ -87,6 +87,9 @@ export default function Login() {
 
         <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-soft)', marginTop: 16 }}>
           Access is logged and audited. Session tokens expire after 24 hours.
+        </p>
+        <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-soft)', marginTop: 8 }}>
+          <Link to="/register" style={{ color: 'var(--ink-soft)' }}>New citizen? Register here</Link>
         </p>
       </div>
     </div>
