@@ -73,6 +73,7 @@ public class AntecedentService {
         return mapToResponse(report);
     }
 
+    @Transactional(readOnly = true)
     public AntecedentReportResponse getReportByNumber(String reportNumber) {
         AntecedentReport report = antecedentRepository
                 .findByReportNumber(reportNumber)
@@ -81,13 +82,15 @@ public class AntecedentService {
         return mapToResponse(report);
     }
 
+    @Transactional(readOnly = true)
     public List<AntecedentReportResponse> getReportsByCitizen(UUID citizenId) {
         return antecedentRepository.findByCitizenId(citizenId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-
+    
+    @Transactional(readOnly = true)
     public List<AntecedentReportResponse> getReportsByStatus(String status) {
         AntecedentStatus antecedentStatus = AntecedentStatus.valueOf(
                 status.toUpperCase());
@@ -97,6 +100,7 @@ public class AntecedentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<AntecedentReportResponse> getReportsByOfficer(String officerUsername) {
         User officer = userRepository.findByUsername(officerUsername)
                 .orElseThrow(() -> new ResourceNotFoundException(
