@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useAuth, ROLE_HOME } from '../context/AuthContext';
+import LedgerTag from '../components/LedgerTag';
 
 const ID_PROOF_TYPES = ['AADHAAR', 'PAN', 'PASSPORT', 'VOTER_ID', 'DRIVING_LICENSE'];
 
@@ -13,6 +14,7 @@ export default function Register() {
   const [form, setForm] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registered, setRegistered] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -26,12 +28,16 @@ export default function Register() {
       const res = await api.post('/api/auth/register-citizen', form);
       const data = unwrap(res);
       login(data);
-      navigate(ROLE_HOME[data.role] || '/login');
+      setRegistered(data);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
       setLoading(false);
     }
+  };
+
+  const continueToDashboard = () => {
+    navigate(ROLE_HOME[registered.role] || '/login');
   };
 
   return (
@@ -55,6 +61,27 @@ export default function Register() {
           </p>
         </div>
 
+        {registered ? (
+          <div className="panel">
+            <div className="panel-body">
+              <div className="alert" style={{ background: 'var(--status-green-bg)', border: '1px solid #bfe2c9', marginBottom: 16 }}>
+                <div style={{ fontWeight: 600, fontSize: 14.5, color: 'var(--status-green)', marginBottom: 4 }}>
+                  Registration successful
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-soft)' }}>
+                  Save your citizen reference number — you'll need it for KYC, firearm applications, and certificates.
+                </div>
+              </div>
+              <div className="detail-item" style={{ marginBottom: 16 }}>
+                <label>Citizen reference number</label>
+                <div><LedgerTag>{registered.citizenReferenceNumber}</LedgerTag></div>
+              </div>
+              <button className="btn" onClick={continueToDashboard} style={{ width: '100%', justifyContent: 'center' }}>
+                Continue to dashboard
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="panel">
           <div className="panel-body">
             {error && <div className="alert alert-error">{error}</div>}
@@ -104,6 +131,7 @@ export default function Register() {
             </form>
           </div>
         </div>
+        )}
 
         <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-soft)', marginTop: 16 }}>
           <Link to="/login" style={{ color: 'var(--ink-soft)' }}>Already have an account? Sign in</Link>
