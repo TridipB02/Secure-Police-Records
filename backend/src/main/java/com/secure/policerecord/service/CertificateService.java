@@ -274,4 +274,15 @@ public class CertificateService {
                 .revocationReason(certificate.getRevocationReason())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public List<CertificateResponse> getCertificatesByCitizenReference(String citizenReference) {
+        Citizen citizen = citizenRepository.findByReferenceNumber(citizenReference)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Citizen not found: " + citizenReference));
+        return certificateRepository.findByCitizenId(citizen.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 }

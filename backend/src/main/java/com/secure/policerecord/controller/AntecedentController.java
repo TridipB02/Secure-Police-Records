@@ -44,12 +44,12 @@ public class AntecedentController {
                 ApiResponse.success("Report retrieved successfully", response));
     }
 
-    @GetMapping("/citizen/{citizenId}")
+    @GetMapping("/citizen/{citizenReference}")
     @PreAuthorize("hasAnyRole('ANTECEDENT_OFFICER', 'ADMIN', 'LICENSING_AUTHORITY')")
     public ResponseEntity<ApiResponse<List<AntecedentReportResponse>>> getCitizenReports(
-            @PathVariable UUID citizenId) {
+            @PathVariable String citizenReference) {
         List<AntecedentReportResponse> response = antecedentService
-                .getReportsByCitizen(citizenId);
+                .getReportsByCitizenReference(citizenReference);
         return ResponseEntity.ok(
                 ApiResponse.success("Citizen reports retrieved successfully", response));
     }

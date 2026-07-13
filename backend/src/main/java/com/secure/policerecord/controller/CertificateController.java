@@ -64,12 +64,12 @@ public class CertificateController {
                 ApiResponse.success("Certificate revoked successfully", response));
     }
 
-    @GetMapping("/citizen/{citizenId}")
+    @GetMapping("/citizen/{citizenReference}")
     @PreAuthorize("hasAnyRole('CITIZEN', 'POLICE_OFFICER', 'LICENSING_AUTHORITY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<CertificateResponse>>> getCitizenCertificates(
-            @PathVariable UUID citizenId) {
+            @PathVariable String citizenReference) {
         List<CertificateResponse> response = certificateService
-                .getCertificatesByCitizen(citizenId);
+                .getCertificatesByCitizenReference(citizenReference);
         return ResponseEntity.ok(
                 ApiResponse.success("Certificates retrieved successfully", response));
     }

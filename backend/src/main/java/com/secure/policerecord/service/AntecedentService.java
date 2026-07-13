@@ -111,6 +111,17 @@ public class AntecedentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<AntecedentReportResponse> getReportsByCitizenReference(String citizenReference) {
+        Citizen citizen = citizenRepository.findByReferenceNumber(citizenReference)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Citizen not found: " + citizenReference));
+        return antecedentRepository.findByCitizenId(citizen.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private AntecedentReportResponse mapToResponse(AntecedentReport report) {
         return AntecedentReportResponse.builder()
                 .id(report.getId().toString())
