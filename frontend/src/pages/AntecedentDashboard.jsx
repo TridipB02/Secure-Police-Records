@@ -119,6 +119,7 @@ function SubmitPanel() {
           ) : (
             <div className="detail-grid">
               <div className="detail-item"><label>Report number</label><div><LedgerTag>{result.reportNumber}</LedgerTag></div></div>
+              <div className="detail-item"><label>Citizen</label><div>{result.citizenName || '—'}</div></div>
               <div className="detail-item"><label>Citizen ref.</label><div><LedgerTag truncate={22}>{result.citizenReference}</LedgerTag></div></div>
               <div className="detail-item"><label>Status</label><div><StatusBadge status={result.overallStatus} /></div></div>
               <div className="detail-item"><label>Conviction status</label><div>{result.convictionStatus}</div></div>
@@ -166,13 +167,16 @@ function MyReportsPanel() {
           <div style={{ overflowX: 'auto' }}>
             <table className="data">
               <thead>
-                <tr><th>Report</th><th>Citizen ref.</th><th>Status</th><th>Pending cases</th><th>Submitted</th></tr>
+                <tr><th>Report</th><th>Citizen</th><th>Status</th><th>Pending cases</th><th>Submitted</th></tr>
               </thead>
               <tbody>
                 {reports.map((r) => (
                   <tr key={r.reportNumber}>
                     <td><LedgerTag>{r.reportNumber}</LedgerTag></td>
-                    <td><LedgerTag truncate={22}>{r.citizenReference}</LedgerTag></td>
+                    <td>
+                      <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                      <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
+                    </td>
                     <td><StatusBadge status={r.overallStatus} /></td>
                     <td>{r.pendingCases}</td>
                     <td>{r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}</td>
@@ -221,6 +225,11 @@ function SearchByCitizenPanel() {
             {loading ? 'Searching…' : 'Search'}
           </button>
         </form>
+        {reports && reports.length > 0 && (
+          <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 10 }}>
+            Showing reports for <strong>{reports[0].citizenName || citizenId}</strong>
+          </p>
+        )}
         {reports && reports.length === 0 && <div className="empty-row">No antecedent reports found for this citizen.</div>}
         {reports && reports.length > 0 && (
           <table className="data">
