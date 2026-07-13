@@ -14,6 +14,8 @@ export default function LicensingDashboard() {
   const [busyId, setBusyId] = useState(null);
   const [reasonMap, setReasonMap] = useState({});
   const [certificates, setCertificates] = useState({});
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
   const toast = useToast();
 
   const load = async (status) => {
@@ -35,6 +37,23 @@ export default function LicensingDashboard() {
     setStatusFilter(status);
     load(status || null);
   };
+
+  const displayedApps = apps
+    .filter((a) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (a.citizenName || '').toLowerCase().includes(q) ||
+        (a.citizenReference || '').toLowerCase().includes(q) ||
+        (a.applicationNumber || '').toLowerCase().includes(q) ||
+        (a.licenseNumber || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
   const updateStatus = async (applicationNumber, status) => {
     const needsReason = status === 'REJECTED' || status === 'REVOKED';
@@ -107,12 +126,27 @@ export default function LicensingDashboard() {
           <div className="panel">
             <div className="panel-header">
               <h2>Applications</h2>
-              <button className="btn btn-secondary btn-sm" onClick={() => load(statusFilter || null)}>Refresh</button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  placeholder="Search citizen, application, license…"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+                >
+                  Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => load(statusFilter || null)}>Refresh</button>
+              </div>
             </div>
             <div className="panel-body" style={{ padding: 0 }}>
               {loading ? (
                   <div style={{ padding: 18 }}><span className="spinner dark" /></div>
-              ) : apps.length === 0 ? (
+              ) : displayedApps.length === 0 ? (
                   <div className="empty-row">No applications found.</div>
               ) : (
                   <div style={{ overflowX: 'auto' }}>
@@ -129,7 +163,7 @@ export default function LicensingDashboard() {
                       </tr>
                       </thead>
                       <tbody>
-                      {apps.map((a) => (
+                      {displayedApps.map((a) => (
                           <tr key={a.applicationNumber}>
                             <td><LedgerTag>{a.applicationNumber}</LedgerTag></td>
                             <td>
