@@ -89,6 +89,8 @@ function AuditLogsPanel() {
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('');
   const [showingMine, setShowingMine] = useState(false);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
   const toast = useToast();
 
   const load = async (action, mine) => {
@@ -118,11 +120,34 @@ function AuditLogsPanel() {
     load(null, true);
   };
 
+  const displayedLogs = logs
+    .filter((log) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (log.actorName || '').toLowerCase().includes(q) ||
+        (log.resourceId || '').toLowerCase().includes(q) ||
+        (log.actionType || '').toLowerCase().includes(q) ||
+        (log.details || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
   return (
       <div className="panel">
         <div className="panel-header">
           <h2>Audit trail</h2>
-          <form onSubmit={handleFilter} style={{ display: 'flex', gap: 8 }}>
+          <form onSubmit={handleFilter} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+                placeholder="Search actor, resource, action…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+            />
             <input
                 placeholder="Filter by action type…"
                 value={actionFilter}
@@ -137,8 +162,15 @@ function AuditLogsPanel() {
             >
               My activity
             </button>
-            {(actionFilter || showingMine) && (
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setActionFilter(''); setShowingMine(false); load(); }}>
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+            >
+              Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+            </button>
+            {(actionFilter || showingMine || searchText) && (
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setActionFilter(''); setShowingMine(false); setSearchText(''); load(); }}>
                   Clear
                 </button>
             )}
@@ -147,7 +179,7 @@ function AuditLogsPanel() {
         <div className="panel-body" style={{ padding: 0 }}>
           {loading ? (
               <div style={{ padding: 18 }}><span className="spinner dark" /></div>
-          ) : logs.length === 0 ? (
+          ) : displayedLogs.length === 0 ? (
               <div className="empty-row">No audit entries found.</div>
           ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -163,7 +195,7 @@ function AuditLogsPanel() {
                   </tr>
                   </thead>
                   <tbody>
-                  {logs.map((log) => (
+                  {displayedLogs.map((log) => (
                       <tr key={log.id}>
                         <td>{log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}</td>
                         <td>{log.actorName}</td>
