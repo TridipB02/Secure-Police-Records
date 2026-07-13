@@ -276,6 +276,8 @@ function AllUsersPanel() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingUsername, setDeletingUsername] = useState(null);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
   const toast = useToast();
   const { user: currentUser } = useAuth();
 
@@ -283,7 +285,8 @@ function AllUsersPanel() {
     setLoading(true);
     try {
       const res = await api.get('/api/auth/users');
-      setUsers(unwrap(res) || []);
+      const nonCitizens = (unwrap(res) || []).filter((u) => u.role !== 'CITIZEN');
+      setUsers(nonCitizens);
     } catch (err) {
       toast.error('Could not load users', apiErrorMessage(err));
     } finally {
@@ -292,6 +295,23 @@ function AllUsersPanel() {
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const displayedUsers = users
+    .filter((u) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (u.username || '').toLowerCase().includes(q) ||
+        (u.fullName || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.role || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
   const handleDelete = async (username) => {
     if (!window.confirm(`Delete user "${username}"? This cannot be undone. Their citizen record and history, if any, will be preserved.`)) {
@@ -313,12 +333,27 @@ function AllUsersPanel() {
     <div className="panel">
       <div className="panel-header">
         <h2>All users</h2>
-        <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input
+            placeholder="Search username, name, email, role…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+          >
+            Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+        </div>
       </div>
       <div className="panel-body" style={{ padding: 0 }}>
         {loading ? (
           <div style={{ padding: 18 }}><span className="spinner dark" /></div>
-        ) : users.length === 0 ? (
+        ) : displayedUsers.length === 0 ? (
           <div className="empty-row">No users found.</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -326,11 +361,11 @@ function AllUsersPanel() {
               <thead>
                 <tr>
                   <th>Username</th><th>Full name</th><th>Email</th><th>Role</th>
-                  <th>Badge</th><th>Station</th><th>Citizen ref</th><th>Created</th><th></th>
+                  <th>Badge</th><th>Station</th><th>Created</th><th></th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {displayedUsers.map((u) => (
                   <tr key={u.username}>
                     <td>{u.username}</td>
                     <td>{u.fullName}</td>
@@ -338,7 +373,6 @@ function AllUsersPanel() {
                     <td>{u.role}</td>
                     <td>{u.badgeNumber || '—'}</td>
                     <td>{u.stationCode || '—'}</td>
-                    <td>{u.citizenReferenceNumber ? <LedgerTag>{u.citizenReferenceNumber}</LedgerTag> : '—'}</td>
                     <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
                     <td>
                       {u.username === currentUser?.username ? (
