@@ -120,7 +120,7 @@ export default function LicensingDashboard() {
                       <thead>
                       <tr>
                         <th>Application</th>
-                        <th>Citizen ref.</th>
+                        <th>Citizen</th>
                         <th>Weapon</th>
                         <th>Status</th>
                         <th>License</th>
@@ -132,7 +132,10 @@ export default function LicensingDashboard() {
                       {apps.map((a) => (
                           <tr key={a.applicationNumber}>
                             <td><LedgerTag>{a.applicationNumber}</LedgerTag></td>
-                            <td><LedgerTag truncate={22}>{a.citizenReference}</LedgerTag></td>
+                            <td>
+                              <div style={{ fontWeight: 500, marginBottom: 2 }}>{a.citizenName || '—'}</div>
+                              <LedgerTag truncate={22}>{a.citizenReference}</LedgerTag>
+                            </td>
                             <td>{a.weaponType}</td>
                             <td><StatusBadge status={a.status} /></td>
                             <td>

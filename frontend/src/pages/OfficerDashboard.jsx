@@ -98,7 +98,7 @@ function PendingKycPanel() {
                   <thead>
                   <tr>
                     <th>Request</th>
-                    <th>Citizen ref.</th>
+                    <th>Citizen</th>
                     <th>Status</th>
                     <th>Submitted</th>
                     <th>Remarks</th>
@@ -109,7 +109,10 @@ function PendingKycPanel() {
                   {requests.map((r) => (
                       <tr key={r.requestNumber}>
                         <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
-                        <td><LedgerTag truncate={22}>{r.citizenReference}</LedgerTag></td>
+                        <td>
+                          <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                          <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
+                        </td>
                         <td><StatusBadge status={r.status} /></td>
                         <td>{r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}</td>
                         <td>
