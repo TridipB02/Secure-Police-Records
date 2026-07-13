@@ -152,6 +152,7 @@ public class AuthService {
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .fullName(user.getFullName())
+                .citizenReferenceNumber(referenceNumber)
                 .build();
     }
 

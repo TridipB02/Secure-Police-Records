@@ -14,4 +14,5 @@ public class AuthResponse {
     private String username;
     private String role;
     private String fullName;
+    private String citizenReferenceNumber;
 }
