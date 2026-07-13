@@ -127,6 +127,7 @@ public class AntecedentService {
                 .id(report.getId().toString())
                 .reportNumber(report.getReportNumber())
                 .citizenReference(report.getCitizen().getReferenceNumber())
+                .citizenName(cryptoUtil.decrypt(report.getCitizen().getFullNameEncrypted()))
                 .officerName(report.getOfficer() != null
                         ? report.getOfficer().getFullName() : "Unassigned")
                 .convictionStatus(report.getConvictionStatus())

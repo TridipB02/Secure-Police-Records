@@ -239,6 +239,7 @@ public class FirearmService {
                 .id(application.getId().toString())
                 .applicationNumber(application.getApplicationNumber())
                 .citizenReference(application.getCitizen().getReferenceNumber())
+                .citizenName(cryptoUtil.decrypt(application.getCitizen().getFullNameEncrypted()))
                 .weaponType(application.getWeaponType())
                 .status(application.getStatus().name())
                 .licenseNumber(application.getLicenseNumber())

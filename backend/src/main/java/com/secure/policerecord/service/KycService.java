@@ -160,6 +160,7 @@ public class KycService {
                 .id(kycRequest.getId().toString())
                 .requestNumber(kycRequest.getRequestNumber())
                 .citizenReference(kycRequest.getCitizen().getReferenceNumber())
+                .citizenName(cryptoUtil.decrypt(kycRequest.getCitizen().getFullNameEncrypted()))
                 .status(kycRequest.getStatus().name())
                 .assignedOfficer(kycRequest.getAssignedOfficer() != null ?
                         kycRequest.getAssignedOfficer().getFullName() : "Unassigned")

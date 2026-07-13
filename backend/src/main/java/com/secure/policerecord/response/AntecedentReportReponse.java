@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class AntecedentReportResponse {
     private String id;
     private String reportNumber;
+    private String citizenName;
     private String citizenReference;
     private String officerName;
     private String convictionStatus;
