@@ -27,8 +27,9 @@ public class KycController {
     @PostMapping("/submit")
     @PreAuthorize("hasAnyRole('CITIZEN', 'ADMIN')")
     public ResponseEntity<ApiResponse<KycResponse>> submitKyc(
-            @Valid @RequestBody KycSubmitRequest request) {
-        KycResponse response = kycService.submitKycRequest(request);
+            @Valid @RequestBody KycSubmitRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        KycResponse response = kycService.submitKycRequest(request, userDetails.getUsername());
         return ResponseEntity.ok(
                 ApiResponse.success("KYC request submitted successfully", response));
     }

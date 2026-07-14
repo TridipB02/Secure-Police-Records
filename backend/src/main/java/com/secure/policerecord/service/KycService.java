@@ -31,7 +31,7 @@ public class KycService {
     private final FabricService fabricService;
 
     @Transactional
-    public KycResponse submitKycRequest(KycSubmitRequest request) {
+    public KycResponse submitKycRequest(KycSubmitRequest request, String submittingUsername) {
         Citizen citizen = citizenRepository
                 .findByReferenceNumber(request.getCitizenReferenceNumber())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -63,7 +63,7 @@ public class KycService {
         kycRepository.save(kycRequest);
 
         auditService.logAction(
-                "SYSTEM", "KYC_SUBMITTED", "KYC_REQUEST",
+                submittingUsername, "KYC_SUBMITTED", "KYC_REQUEST",
                 kycRequest.getRequestNumber(),
                 "KYC request submitted for citizen: " + citizen.getReferenceNumber(),
                 null
