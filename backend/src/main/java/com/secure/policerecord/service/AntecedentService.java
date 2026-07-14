@@ -27,7 +27,8 @@ public class AntecedentService {
     private final CryptoUtil cryptoUtil;
     private final HashUtil hashUtil;
     private final ReferenceGenerator referenceGenerator;
-
+    private final AuditService auditService;
+    
     @Transactional
     public AntecedentReportResponse submitAntecedentReport(
             AntecedentRequest request, String officerUsername) {
@@ -69,6 +70,14 @@ public class AntecedentService {
                 .build();
 
         antecedentRepository.save(report);
+
+        auditService.logAction(
+                officerUsername, "ANTECEDENT_SUBMITTED", "ANTECEDENT_REPORT",
+                reportNumber,
+                "Antecedent report submitted for citizen: " + citizen.getReferenceNumber()
+                        + " — status: " + status.name(),
+                null
+        );
 
         return mapToResponse(report);
     }
