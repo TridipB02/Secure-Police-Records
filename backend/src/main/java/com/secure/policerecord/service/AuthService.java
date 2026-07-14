@@ -180,7 +180,7 @@ public class AuthService {
         }
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
-
-        userRepository.delete(user);
+        user.setIsActive(false);
+        userRepository.save(user);
     }
 }

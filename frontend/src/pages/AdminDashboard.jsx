@@ -320,8 +320,8 @@ function AllUsersPanel() {
     setDeletingUsername(username);
     try {
       await api.delete(`/api/auth/users/${username}`);
-      toast.success('User deleted', username);
-      setUsers((prev) => prev.filter((u) => u.username !== username));
+      toast.success('User deactivated', username);
+      load();
     } catch (err) {
       toast.error('Delete failed', apiErrorMessage(err));
     } finally {
