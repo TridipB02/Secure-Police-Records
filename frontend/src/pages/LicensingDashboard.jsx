@@ -107,6 +107,21 @@ export default function LicensingDashboard() {
     }
   };
 
+  const downloadCertificatePdf = async (certificateId) => {
+    try {
+      const res = await api.get(`/api/certificates/${certificateId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${certificateId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Download failed', apiErrorMessage(err));
+    }
+  };
+
   return (
       <>
         <Navbar subtitle="Licensing Authority" />
@@ -209,6 +224,12 @@ export default function LicensingDashboard() {
                                     />
                                     <LedgerTag>{certificates[a.applicationNumber].certificateId}</LedgerTag>
                                     <StatusBadge status={certificates[a.applicationNumber].status} />
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => downloadCertificatePdf(certificates[a.applicationNumber].certificateId)}
+                                    >
+                                      Download PDF
+                                    </button>
                                     {certificates[a.applicationNumber].status === 'VALID' && (
                                         <button
                                             className="btn btn-danger btn-sm"
