@@ -43,6 +43,9 @@ public class CertificateService {
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.public-url}")
+    private String publicUrl;
+
     @Transactional
     public CertificateResponse generateFirearmCertificate(
             String applicationNumber, String officerUsername) {
