@@ -8,6 +8,13 @@ import { useToast } from '../context/ToastContext';
 
 const TABS = ['Tamper detection', 'Audit logs', 'Record history'];
 
+const ACTION_TYPES = [
+  'KYC_SUBMITTED', 'KYC_VERIFIED', 'ANTECEDENT_SUBMITTED',
+  'FIREARM_APPLIED', 'FIREARM_STATUS_UPDATED',
+  'CERTIFICATE_GENERATED', 'KYC_CERTIFICATE_GENERATED', 'CERTIFICATE_REVOKED',
+  'RECORD_CREATED', 'RECORD_UPDATED',
+];
+
 export default function AuditDashboard() {
   const [tab, setTab] = useState(TABS[0]);
 
@@ -148,12 +155,14 @@ function AuditLogsPanel() {
                 onChange={(e) => setSearchText(e.target.value)}
                 style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
             />
-            <input
-                placeholder="Filter by action type…"
+            <select
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
                 style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5 }}
-            />
+            >
+              <option value="">All action types</option>
+              {ACTION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
             <button className="btn btn-secondary btn-sm" type="submit">Filter</button>
             <button
                 type="button"
