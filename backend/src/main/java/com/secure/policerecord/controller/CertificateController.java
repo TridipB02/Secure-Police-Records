@@ -73,4 +73,15 @@ public class CertificateController {
         return ResponseEntity.ok(
                 ApiResponse.success("Certificates retrieved successfully", response));
     }
+
+    @GetMapping("/{certificateId}/pdf")
+    @PreAuthorize("hasAnyRole('CITIZEN', 'POLICE_OFFICER', 'LICENSING_AUTHORITY', 'ADMIN')")
+    public ResponseEntity<byte[]> downloadCertificatePdf(@PathVariable String certificateId) {
+        byte[] pdf = certificateService.generateCertificatePdf(certificateId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + certificateId + ".pdf\"")
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 }

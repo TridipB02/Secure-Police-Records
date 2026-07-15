@@ -42,6 +42,7 @@ public class CertificateService {
     private final HashUtil hashUtil;
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
+    private final CertificatePdfService certificatePdfService;
 
     @org.springframework.beans.factory.annotation.Value("${app.public-url}")
     private String publicUrl;
@@ -156,6 +157,48 @@ public class CertificateService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Certificate not found: " + certificateId));
         return mapToResponse(certificate);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] generateCertificatePdf(String certificateId) {
+        Certificate certificate = certificateRepository
+                .findByCertificateId(certificateId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Certificate not found: " + certificateId));
+
+        Citizen citizen = certificate.getCitizen();
+        String citizenFullName = citizen != null ? cryptoUtil.decrypt(citizen.getFullNameEncrypted()) : null;
+        String citizenAddress = citizen != null ? cryptoUtil.decrypt(citizen.getAddressEncrypted()) : null;
+
+        String typeLabel;
+        java.util.Map<String, String> details = new java.util.LinkedHashMap<>();
+
+        if ("FIREARM_LICENSE".equals(certificate.getCertificateType())) {
+            typeLabel = "Firearm License Certificate";
+            FirearmApplication application = firearmRepository.findById(certificate.getReferenceId()).orElse(null);
+            details.put("License Number", application != null && application.getLicenseNumber() != null ? application.getLicenseNumber() : "—");
+            details.put("Weapon Type", application != null ? application.getWeaponType() : "—");
+            details.put("Issue Date", certificate.getIssueDate() != null ? certificate.getIssueDate().toLocalDate().toString() : "—");
+            details.put("Valid Until", certificate.getExpiryDate() != null ? certificate.getExpiryDate().toLocalDate().toString() : "—");
+        } else {
+            typeLabel = "KYC Verification Certificate";
+            details.put("ID Proof Type", citizen != null ? citizen.getIdProofType() : "—");
+            details.put("Verification Date", certificate.getIssueDate() != null ? certificate.getIssueDate().toLocalDate().toString() : "—");
+            details.put("Valid Until", certificate.getExpiryDate() != null ? certificate.getExpiryDate().toLocalDate().toString() : "—");
+        }
+
+        String officerFullName = certificate.getIssuedBy() != null ? certificate.getIssuedBy().getFullName() : null;
+        String badgeNumber = certificate.getIssuedBy() != null ? certificate.getIssuedBy().getBadgeNumber() : null;
+        String stationCode = certificate.getIssuedBy() != null ? certificate.getIssuedBy().getStationCode() : null;
+
+        byte[] qrPngBytes = certificate.getQrCodePath() != null
+                ? java.util.Base64.getDecoder().decode(certificate.getQrCodePath())
+                : null;
+
+        return certificatePdfService.generateCertificatePdf(
+                certificate, citizenFullName, citizenAddress, typeLabel, details,
+                officerFullName, badgeNumber, stationCode, qrPngBytes
+        );
     }
 
     @Transactional
