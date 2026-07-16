@@ -155,6 +155,17 @@ public class KycService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<KycResponse> getKycRequestsByCitizenReference(String citizenReference) {
+        Citizen citizen = citizenRepository.findByReferenceNumber(citizenReference)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Citizen not found: " + citizenReference));
+        return kycRepository.findByCitizenId(citizen.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private KycResponse mapToResponse(com.secure.policerecord.model.KycRequest kycRequest) {
         return KycResponse.builder()
                 .id(kycRequest.getId().toString())

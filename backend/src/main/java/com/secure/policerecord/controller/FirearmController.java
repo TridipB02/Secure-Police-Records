@@ -14,7 +14,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/firearm")
@@ -63,12 +62,12 @@ public class FirearmController {
                 ApiResponse.success("License retrieved successfully", response));
     }
 
-    @GetMapping("/citizen/{citizenId}")
+    @GetMapping("/citizen/{citizenReference}")
     @PreAuthorize("hasAnyRole('CITIZEN', 'POLICE_OFFICER', 'LICENSING_AUTHORITY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FirearmResponse>>> getCitizenApplications(
-            @PathVariable UUID citizenId) {
+            @PathVariable String citizenReference) {
         List<FirearmResponse> response = firearmService
-                .getApplicationsByCitizen(citizenId);
+                .getApplicationsByCitizenReference(citizenReference);
         return ResponseEntity.ok(
                 ApiResponse.success("Citizen applications retrieved", response));
     }

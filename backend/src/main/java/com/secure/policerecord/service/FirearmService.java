@@ -234,6 +234,17 @@ public class FirearmService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<FirearmResponse> getApplicationsByCitizenReference(String citizenReference) {
+        Citizen citizen = citizenRepository.findByReferenceNumber(citizenReference)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Citizen not found: " + citizenReference));
+        return firearmRepository.findByCitizenId(citizen.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private FirearmResponse mapToResponse(FirearmApplication application) {
         return FirearmResponse.builder()
                 .id(application.getId().toString())

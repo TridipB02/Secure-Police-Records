@@ -14,7 +14,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/kyc")
@@ -72,11 +71,11 @@ public class KycController {
                 ApiResponse.success("Officer KYC requests retrieved", response));
     }
 
-    @GetMapping("/citizen/{citizenId}")
+    @GetMapping("/citizen/{citizenReference}")
     @PreAuthorize("hasAnyRole('CITIZEN', 'POLICE_OFFICER', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<KycResponse>>> getCitizenKyc(
-            @PathVariable UUID citizenId) {
-        List<KycResponse> response = kycService.getKycRequestsByCitizen(citizenId);
+            @PathVariable String citizenReference) {
+        List<KycResponse> response = kycService.getKycRequestsByCitizenReference(citizenReference);
         return ResponseEntity.ok(
                 ApiResponse.success("Citizen KYC requests retrieved", response));
     }
