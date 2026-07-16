@@ -156,6 +156,15 @@ public class KycService {
     }
 
     @Transactional(readOnly = true)
+    public List<KycResponse> getKycRequestsByStatusValue(String status) {
+        KycStatus kycStatus = KycStatus.valueOf(status.toUpperCase());
+        return kycRepository.findByStatus(kycStatus)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<KycResponse> getKycRequestsByCitizenReference(String citizenReference) {
         Citizen citizen = citizenRepository.findByReferenceNumber(citizenReference)
                 .orElseThrow(() -> new ResourceNotFoundException(

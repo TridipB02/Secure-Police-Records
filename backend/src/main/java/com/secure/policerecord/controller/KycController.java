@@ -79,4 +79,13 @@ public class KycController {
         return ResponseEntity.ok(
                 ApiResponse.success("Citizen KYC requests retrieved", response));
     }
+
+    @GetMapping("/by-status/{status}")
+    @PreAuthorize("hasAnyRole('POLICE_OFFICER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<KycResponse>>> getKycByStatus(
+            @PathVariable String status) {
+        List<KycResponse> response = kycService.getKycRequestsByStatusValue(status);
+        return ResponseEntity.ok(
+                ApiResponse.success("KYC requests retrieved", response));
+    }
 }
