@@ -6,7 +6,7 @@ import RecordCard from '../components/RecordCard';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
 
-const TABS = ['Pending KYC', 'Register citizen', 'Police records'];
+const TABS = ['Pending KYC', 'Verified KYC', 'Register citizen', 'Police records'];
 
 export default function OfficerDashboard() {
   const [tab, setTab] = useState(TABS[0]);
@@ -24,6 +24,7 @@ export default function OfficerDashboard() {
             ))}
           </div>
           {tab === 'Pending KYC' && <PendingKycPanel />}
+          {tab === 'Verified KYC' && <VerifiedKycPanel />}
           {tab === 'Register citizen' && <RegisterCitizenPanel />}
           {tab === 'Police records' && <RecordsPanel />}
         </main>
@@ -165,6 +166,106 @@ function PendingKycPanel() {
                         </td>
                       </tr>
                   ))}
+                  </tbody>
+                </table>
+              </div>
+          )}
+        </div>
+      </div>
+  );
+}
+
+function VerifiedKycPanel() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+  const [certificates, setCertificates] = useState({});
+  const toast = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/kyc/by-status/VERIFIED');
+      setRequests(unwrap(res) || []);
+    } catch (err) {
+      toast.error('Could not load verified requests', apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const genCertificate = async (requestNumber) => {
+    setBusyId(requestNumber);
+    try {
+      const res = await api.post(`/api/certificates/kyc/${requestNumber}`);
+      const data = unwrap(res);
+      setCertificates((c) => ({ ...c, [requestNumber]: data }));
+      toast.success('Certificate generated', data.certificateId);
+    } catch (err) {
+      toast.error('Certificate generation failed', apiErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const downloadPdf = async (certificateId) => {
+    try {
+      const res = await api.get(`/api/certificates/${certificateId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${certificateId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Download failed', apiErrorMessage(err));
+    }
+  };
+
+  return (
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Verified KYC requests</h2>
+          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+        </div>
+        <div className="panel-body" style={{ padding: 0 }}>
+          {loading ? (
+              <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+          ) : requests.length === 0 ? (
+              <div className="empty-row">No verified KYC requests.</div>
+          ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data">
+                  <thead>
+                    <tr><th>Request</th><th>Citizen</th><th>Verified</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {requests.map((r) => (
+                        <tr key={r.requestNumber}>
+                          <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
+                          <td>
+                            <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                            <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
+                          </td>
+                          <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
+                          <td>
+                            <div className="btn-row" style={{ marginTop: 0 }}>
+                              {!certificates[r.requestNumber] ? (
+                                  <button className="btn btn-sm" disabled={busyId === r.requestNumber} onClick={() => genCertificate(r.requestNumber)}>
+                                    Generate certificate
+                                  </button>
+                              ) : (
+                                  <button className="btn btn-secondary btn-sm" onClick={() => downloadPdf(certificates[r.requestNumber].certificateId)}>
+                                    Download PDF
+                                  </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
