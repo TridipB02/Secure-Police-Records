@@ -43,7 +43,23 @@ function SubmitPanel() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [citizenRecords, setCitizenRecords] = useState(null);
+  const [recordsLoading, setRecordsLoading] = useState(false);
   const toast = useToast();
+
+  const lookupRecords = async () => {
+    if (!form.citizenReferenceNumber.trim()) return;
+    setRecordsLoading(true);
+    setCitizenRecords(null);
+    try {
+      const res = await api.get(`/api/records/citizen/${form.citizenReferenceNumber.trim()}`);
+      setCitizenRecords(unwrap(res) || []);
+    } catch (err) {
+      toast.error('Could not look up records', apiErrorMessage(err));
+    } finally {
+      setRecordsLoading(false);
+    }
+  };
 
   const set = (k) => (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked
@@ -76,8 +92,28 @@ function SubmitPanel() {
           <form onSubmit={submit}>
             <div className="field">
               <label>Citizen reference number</label>
-              <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-20260702115022-E67DD2" />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-20260702115022-E67DD2" style={{ flex: 1 }} />
+                <button type="button" className="btn btn-secondary btn-sm" disabled={recordsLoading} onClick={lookupRecords}>
+                  {recordsLoading ? 'Checking…' : 'Check FIR history'}
+                </button>
+              </div>
             </div>
+            {citizenRecords && (
+                <div style={{ marginBottom: 16, padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface-raised)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                    {citizenRecords.length === 0 ? 'No police records found for this citizen.' : `${citizenRecords.length} record(s) found:`}
+                  </div>
+                  {citizenRecords.map((r) => (
+                      <div key={r.id} style={{ fontSize: 12, marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                        <strong>{r.recordType}</strong> — <LedgerTag truncate={22}>{r.recordId}</LedgerTag>
+                        <div style={{ color: 'var(--ink-soft)', marginTop: 2 }}>
+                          Filed by {r.officerName} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
+                        </div>
+                      </div>
+                  ))}
+                </div>
+            )}
             <div className="field">
               <label>FIR history</label>
               <textarea required rows={3} value={form.firHistory} onChange={set('firHistory')} placeholder="No FIR registered" />
