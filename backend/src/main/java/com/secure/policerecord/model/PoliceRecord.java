@@ -51,6 +51,10 @@ public class PoliceRecord {
     @JoinColumn(name = "officer_id")
     private User officer;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "citizen_id")
+    private Citizen citizen;
+
     @Column(name = "digital_signature")
     private String digitalSignature;
 

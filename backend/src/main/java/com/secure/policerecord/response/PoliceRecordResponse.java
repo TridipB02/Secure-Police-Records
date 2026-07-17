@@ -15,6 +15,8 @@ public class PoliceRecordResponse {
     private Integer version;
     private String recordType;
     private String content;
+    private String citizenName;
+    private String citizenReference;
     private String previousHash;
     private String currentHash;
     private String actionType;

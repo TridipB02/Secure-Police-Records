@@ -31,6 +31,7 @@ public class RecordService {
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
     private final FabricService fabricService;
+    private final CitizenRepository citizenRepository;
 
     @Transactional
     public PoliceRecordResponse createRecord(PoliceRecordRequest request,
@@ -38,6 +39,14 @@ public class RecordService {
         User officer = userRepository.findByUsername(officerUsername)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Officer not found: " + officerUsername));
+
+        if (request.getCitizenReferenceNumber() == null || request.getCitizenReferenceNumber().isBlank()) {
+            throw new BadRequestException(
+                    "A citizen reference number is required to create a police record");
+        }
+        Citizen citizen = citizenRepository.findByReferenceNumber(request.getCitizenReferenceNumber())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Citizen not found: " + request.getCitizenReferenceNumber()));
 
         String recordId = referenceGenerator.generateRecordId();
         String contentEncrypted = cryptoUtil.encrypt(request.getContent());
@@ -57,6 +66,7 @@ public class RecordService {
                 .actionType(RecordAction.CREATE)
                 .actionReasonEncrypted(actionReasonEncrypted)
                 .officer(officer)
+                .citizen(citizen)
                 .build();
 
         policeRecordRepository.save(record);
@@ -112,6 +122,7 @@ public class RecordService {
                 .actionType(RecordAction.UPDATE)
                 .actionReasonEncrypted(actionReasonEncrypted)
                 .officer(officer)
+                .citizen(latest.getCitizen())
                 .build();
 
         policeRecordRepository.save(updatedRecord);
@@ -158,6 +169,17 @@ public class RecordService {
                 .map(r -> mapToResponse(r, cryptoUtil.decrypt(r.getContentEncrypted())))
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<PoliceRecordResponse> getRecordsByCitizenReference(String citizenReference) {
+        Citizen citizen = citizenRepository.findByReferenceNumber(citizenReference)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Citizen not found: " + citizenReference));
+        return policeRecordRepository.findByCitizenIdOrderByCreatedAtDesc(citizen.getId())
+                .stream()
+                .map(r -> mapToResponse(r, cryptoUtil.decrypt(r.getContentEncrypted())))
+                .collect(Collectors.toList());
+    }
     
     @Transactional(readOnly = true)
     public TamperCheckResponse verifyRecord(String recordId) {
@@ -200,12 +222,26 @@ public class RecordService {
     }
 
     private PoliceRecordResponse mapToResponse(PoliceRecord record, String content) {
+        String citizenName = null;
+        String citizenReference = null;
+        if (record.getCitizen() != null) {
+            try {
+                citizenName = cryptoUtil.decrypt(record.getCitizen().getFullNameEncrypted());
+                citizenReference = record.getCitizen().getReferenceNumber();
+            } catch (Exception e) {
+                citizenName = null;
+                citizenReference = record.getCitizen().getReferenceNumber();
+            }
+        }
+
         return PoliceRecordResponse.builder()
                 .id(record.getId().toString())
                 .recordId(record.getRecordId())
                 .version(record.getVersion())
                 .recordType(record.getRecordType())
                 .content(content)
+                .citizenName(citizenName)
+                .citizenReference(citizenReference)
                 .previousHash(record.getPreviousHash())
                 .currentHash(record.getCurrentHash())
                 .actionType(record.getActionType().name())

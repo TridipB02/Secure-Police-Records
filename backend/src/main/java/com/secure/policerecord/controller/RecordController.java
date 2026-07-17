@@ -71,4 +71,13 @@ public class RecordController {
         return ResponseEntity.ok(
                 ApiResponse.success("Record verification completed", response));
     }
+
+    @GetMapping("/citizen/{citizenReference}")
+    @PreAuthorize("hasAnyRole('POLICE_OFFICER', 'ANTECEDENT_OFFICER', 'AUDIT_OFFICER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<PoliceRecordResponse>>> getRecordsByCitizen(
+            @PathVariable String citizenReference) {
+        List<PoliceRecordResponse> response = recordService.getRecordsByCitizenReference(citizenReference);
+        return ResponseEntity.ok(
+                ApiResponse.success("Citizen records retrieved successfully", response));
+    }
 }
