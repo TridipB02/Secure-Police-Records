@@ -1,9 +1,12 @@
 package com.secure.policerecord.service;
 
+import com.secure.policerecord.exception.BadRequestException;
 import com.secure.policerecord.exception.ResourceNotFoundException;
+import com.secure.policerecord.model.Citizen;
 import com.secure.policerecord.model.PoliceRecord;
 import com.secure.policerecord.model.RecordAction;
 import com.secure.policerecord.model.User;
+import com.secure.policerecord.repository.CitizenRepository;
 import com.secure.policerecord.repository.PoliceRecordRepository;
 import com.secure.policerecord.repository.UserRepository;
 import com.secure.policerecord.request.PoliceRecordRequest;
