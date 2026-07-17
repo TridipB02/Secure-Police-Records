@@ -370,7 +370,7 @@ function RegisterCitizenPanel() {
 
 function RecordsPanel() {
   const [mode, setMode] = useState('create');
-  const [form, setForm] = useState({ recordType: 'FIR', content: '', actionReason: '', existingRecordId: '' });
+  const [form, setForm] = useState({ citizenReferenceNumber: '', recordType: 'FIR', content: '', actionReason: '', existingRecordId: '' });
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(null);
   const [historyId, setHistoryId] = useState('');
@@ -387,7 +387,7 @@ function RecordsPanel() {
     setLoading(true);
     try {
       const payload = mode === 'create'
-          ? { recordType: form.recordType, content: form.content, actionReason: form.actionReason }
+          ? { citizenReferenceNumber: form.citizenReferenceNumber, recordType: form.recordType, content: form.content, actionReason: form.actionReason }
           : { recordType: form.recordType, content: form.content, actionReason: form.actionReason, existingRecordId: form.existingRecordId };
       const res = mode === 'create'
           ? await api.post('/api/records/create', payload)
@@ -395,7 +395,7 @@ function RecordsPanel() {
       const data = unwrap(res);
       setCreated(data);
       toast.success(mode === 'create' ? 'Record created' : 'Record updated', data.recordId);
-      setForm({ recordType: 'FIR', content: '', actionReason: '', existingRecordId: '' });
+      setForm({ citizenReferenceNumber: '', recordType: 'FIR', content: '', actionReason: '', existingRecordId: '' });
     } catch (err) {
       toast.error('Save failed', apiErrorMessage(err));
     } finally {
@@ -446,6 +446,12 @@ function RecordsPanel() {
             </div>
             <div className="panel-body">
               <form onSubmit={submit}>
+                {mode === 'create' && (
+                    <div className="field">
+                      <label>Citizen reference number</label>
+                      <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-20260702115022-E67DD2" />
+                    </div>
+                )}
                 {mode === 'update' && (
                     <div className="field">
                       <label>Existing record ID</label>
