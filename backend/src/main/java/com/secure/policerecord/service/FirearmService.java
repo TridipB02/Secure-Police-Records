@@ -44,13 +44,17 @@ public class FirearmService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Citizen not found: " + request.getCitizenReferenceNumber()));
 
-        //require a VERIFIED KYC before accepting a firearm application
         List<KycRequest> kycRequests = kycRepository.findByCitizenId(citizen.getId());
         boolean hasVerifiedKyc = kycRequests.stream()
                 .anyMatch(k -> k.getStatus() == KycStatus.VERIFIED);
         if (!hasVerifiedKyc) {
             throw new BadRequestException(
                     "Cannot apply for firearm license: KYC verification required first");
+        }
+
+        if (request.getBiometricVerified() == null || !request.getBiometricVerified()) {
+            throw new BadRequestException(
+                    "Biometric verification is required before submitting a firearm application");
         }
 
         List<FirearmApplication> existing = firearmRepository
@@ -77,6 +81,8 @@ public class FirearmService {
                 .purposeEncrypted(purposeEncrypted)
                 .status(FirearmStatus.SUBMITTED)
                 .reportHash(reportHash)
+                .biometricVerified(true)
+                .biometricVerifiedAt(LocalDateTime.now())
                 .build();
 
         firearmRepository.save(application);
@@ -259,6 +265,7 @@ public class FirearmService {
                 .expiryDate(application.getExpiryDate() != null
                         ? application.getExpiryDate().toString() : null)
                 .blockchainTxId(application.getBlockchainTxId())
+                .biometricVerified(application.getBiometricVerified())
                 .createdAt(LocalDateTime.now().toString())
                 .build();
     }
