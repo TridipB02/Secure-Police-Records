@@ -14,4 +14,6 @@ public class FirearmRequest {
 
     @NotBlank(message = "Purpose is required")
     private String purpose;
+
+    private Boolean biometricVerified;
 }

@@ -20,5 +20,6 @@ public class FirearmResponse {
     private String issueDate;
     private String expiryDate;
     private String blockchainTxId;
+    private Boolean biometricVerified;
     private String createdAt;
 }

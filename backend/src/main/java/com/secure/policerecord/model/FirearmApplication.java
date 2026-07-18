@@ -83,6 +83,13 @@ public class FirearmApplication {
     @Column(name = "certificate_qr_path")
     private String certificateQrPath;
 
+    @Column(name = "biometric_verified", nullable = false)
+    @Builder.Default
+    private Boolean biometricVerified = false;
+
+    @Column(name = "biometric_verified_at")
+    private LocalDateTime biometricVerifiedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
