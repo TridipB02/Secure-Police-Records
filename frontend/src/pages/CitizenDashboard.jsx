@@ -197,12 +197,21 @@ function FirearmPanel({ profile }) {
   const apply = async (e) => {
     e.preventDefault();
     if (!profile) return;
+    if (biometricStatus !== 'verified') {
+      toast.error('Biometric verification required', 'Please complete the biometric scan before submitting.');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await api.post('/api/firearm/apply', { citizenReferenceNumber: profile.referenceNumber, ...form });
+      const res = await api.post('/api/firearm/apply', {
+        citizenReferenceNumber: profile.referenceNumber,
+        ...form,
+        biometricVerified: true,
+      });
       const data = unwrap(res);
       toast.success('Application submitted', data.applicationNumber);
       setForm({ weaponType: 'PISTOL', purpose: '' });
+      setBiometricStatus('idle');
       loadApps();
     } catch (err) {
       toast.error('Application failed', apiErrorMessage(err));
