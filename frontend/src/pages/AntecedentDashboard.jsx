@@ -105,10 +105,13 @@ function SubmitPanel() {
                     {citizenRecords.length === 0 ? 'No police records found for this citizen.' : `${citizenRecords.length} record(s) found:`}
                   </div>
                   {citizenRecords.map((r) => (
-                      <div key={r.id} style={{ fontSize: 12, marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                      <div key={r.id} style={{ fontSize: 12, marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
                         <strong>{r.recordType}</strong> — <LedgerTag truncate={22}>{r.recordId}</LedgerTag>
-                        <div style={{ color: 'var(--ink-soft)', marginTop: 2 }}>
+                        <div style={{ color: 'var(--ink-soft)', marginTop: 2, marginBottom: 6 }}>
                           Filed by {r.officerName} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
+                        </div>
+                        <div style={{ background: 'var(--surface)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>
+                          {r.content}
                         </div>
                       </div>
                   ))}
