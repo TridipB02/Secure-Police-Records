@@ -169,7 +169,13 @@ function FirearmPanel({ profile }) {
   const [loading, setLoading] = useState(false);
   const [apps, setApps] = useState([]);
   const [listLoading, setListLoading] = useState(true);
+  const [biometricStatus, setBiometricStatus] = useState('idle');
   const toast = useToast();
+
+  const runBiometricScan = () => {
+    setBiometricStatus('scanning');
+    setTimeout(() => setBiometricStatus('verified'), 1500);
+  };
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -224,7 +230,28 @@ function FirearmPanel({ profile }) {
                 <label>Purpose</label>
                 <textarea required rows={3} value={form.purpose} onChange={set('purpose')} placeholder="Self defense due to security threat" />
               </div>
-              <button className="btn" type="submit" disabled={loading || !profile}>
+              <div style={{ padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginBottom: 14, background: 'var(--surface-raised)' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Biometric Verification (Simulated)</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', marginBottom: 10 }}>
+                  Simulates Aadhaar-based fingerprint authentication. Not a real biometric capture — see project documentation.
+                </div>
+                {biometricStatus === 'idle' && (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={runBiometricScan}>
+                      Simulate Fingerprint Scan
+                    </button>
+                )}
+                {biometricStatus === 'scanning' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+                      <span className="spinner dark" /> Scanning fingerprint…
+                    </div>
+                )}
+                {biometricStatus === 'verified' && (
+                    <div style={{ fontSize: 12.5, color: 'var(--status-green)', fontWeight: 600 }}>
+                      ✓ Biometric match confirmed
+                    </div>
+                )}
+              </div>
+              <button className="btn" type="submit" disabled={loading || !profile || biometricStatus !== 'verified'}>
                 {loading && <span className="spinner" />}
                 {loading ? 'Submitting…' : 'Submit application'}
               </button>
