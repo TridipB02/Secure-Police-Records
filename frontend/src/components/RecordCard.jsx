@@ -1,5 +1,5 @@
 import LedgerTag from './LedgerTag';
-export default function RecordCard({ record }) {
+export default function RecordCard({ record, showHashes = true }) {
   return (
     <div className="panel" style={{ marginBottom: 12 }}>
       <div className="panel-header">
@@ -15,18 +15,22 @@ export default function RecordCard({ record }) {
             <label>Record ID</label>
             <div><LedgerTag>{record.recordId}</LedgerTag></div>
           </div>
-          <div className="detail-item">
-            <label>Current hash</label>
-            <div><LedgerTag truncate={18}>{record.currentHash}</LedgerTag></div>
-          </div>
-          <div className="detail-item">
-            <label>Previous hash</label>
-            <div><LedgerTag truncate={18}>{record.previousHash}</LedgerTag></div>
-          </div>
-          <div className="detail-item">
-            <label>Blockchain TX</label>
-            <div><LedgerTag truncate={18}>{record.blockchainTxId}</LedgerTag></div>
-          </div>
+          {showHashes && (
+              <>
+                <div className="detail-item">
+                  <label>Current hash</label>
+                  <div><LedgerTag truncate={18}>{record.currentHash}</LedgerTag></div>
+                </div>
+                <div className="detail-item">
+                  <label>Previous hash</label>
+                  <div><LedgerTag truncate={18}>{record.previousHash}</LedgerTag></div>
+                </div>
+                <div className="detail-item">
+                  <label>Blockchain TX</label>
+                  <div><LedgerTag truncate={18}>{record.blockchainTxId}</LedgerTag></div>
+                </div>
+              </>
+          )}
           <div className="detail-item">
             <label>Officer</label>
             <div>{record.officerName}</div>
