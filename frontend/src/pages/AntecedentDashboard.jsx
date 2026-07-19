@@ -4,6 +4,7 @@ import LedgerTag from '../components/LedgerTag';
 import StatusBadge from '../components/StatusBadge';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
+import RecordCard from '../components/RecordCard';
 
 const TABS = ['Submit report', 'My reports', 'Search by citizen'];
 
@@ -100,19 +101,13 @@ function SubmitPanel() {
               </div>
             </div>
             {citizenRecords && (
-                <div style={{ marginBottom: 16, padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface-raised)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
                     {citizenRecords.length === 0 ? 'No police records found for this citizen.' : `${citizenRecords.length} record(s) found:`}
                   </div>
                   {citizenRecords.map((r) => (
-                      <div key={r.id} style={{ fontSize: 12, marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
-                        <strong>{r.recordType}</strong> — <LedgerTag truncate={22}>{r.recordId}</LedgerTag>
-                        <div style={{ color: 'var(--ink-soft)', marginTop: 2, marginBottom: 6 }}>
-                          Filed by {r.officerName} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
-                        </div>
-                        <div style={{ background: 'var(--surface)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>
-                          {r.content}
-                        </div>
+                      <div key={r.id} style={{ marginBottom: 12 }}>
+                        <RecordCard record={r} />
                       </div>
                   ))}
                 </div>
