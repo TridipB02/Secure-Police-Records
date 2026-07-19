@@ -171,6 +171,7 @@ export default function LicensingDashboard() {
                         <th>Application</th>
                         <th>Citizen</th>
                         <th>Weapon</th>
+                        <th>Biometric</th>
                         <th>Status</th>
                         <th>License</th>
                         <th>Reason (reject/revoke)</th>
@@ -186,6 +187,7 @@ export default function LicensingDashboard() {
                               <LedgerTag truncate={22}>{a.citizenReference}</LedgerTag>
                             </td>
                             <td>{a.weaponType}</td>
+                            <td>{a.biometricVerified ? <span style={{ color: 'var(--status-green)', fontSize: 12 }}>✓ Verified</span> : <span style={{ color: 'var(--ink-soft)', fontSize: 12 }}>—</span>}</td>
                             <td><StatusBadge status={a.status} /></td>
                             <td>
                               {a.licenseNumber ? (
