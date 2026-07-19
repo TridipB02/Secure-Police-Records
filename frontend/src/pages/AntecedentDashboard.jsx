@@ -6,7 +6,7 @@ import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
 import RecordCard from '../components/RecordCard';
 
-const TABS = ['Submit report', 'My reports', 'Search by citizen'];
+const TABS = ['Submit report', 'My reports', 'Search by citizen', 'All citizens'];
 
 export default function AntecedentDashboard() {
   const [tab, setTab] = useState(TABS[0]);
@@ -26,6 +26,7 @@ export default function AntecedentDashboard() {
         {tab === 'Submit report' && <SubmitPanel />}
         {tab === 'My reports' && <MyReportsPanel />}
         {tab === 'Search by citizen' && <SearchByCitizenPanel />}
+        {tab === 'All citizens' && <AllCitizensPanel />}
       </main>
     </>
   );
@@ -107,7 +108,7 @@ function SubmitPanel() {
                   </div>
                   {citizenRecords.map((r) => (
                       <div key={r.id} style={{ marginBottom: 12 }}>
-                        <RecordCard record={r} />
+                        <RecordCard record={r} showHashes={false} />
                       </div>
                   ))}
                 </div>
@@ -313,6 +314,96 @@ function SearchByCitizenPanel() {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AllCitizensPanel() {
+  const [citizens, setCitizens] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
+  const toast = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/citizens/all');
+      setCitizens(unwrap(res) || []);
+    } catch (err) {
+      toast.error('Could not load citizens', apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const displayedCitizens = citizens
+    .filter((c) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (c.fullName || '').toLowerCase().includes(q) ||
+        (c.referenceNumber || '').toLowerCase().includes(q) ||
+        (c.phone || '').toLowerCase().includes(q) ||
+        (c.email || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+  return (
+    <div className="panel">
+      <div className="panel-header">
+        <h2>All registered citizens</h2>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input
+            placeholder="Search name, ref, phone, email…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+          >
+            Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+        </div>
+      </div>
+      <div className="panel-body" style={{ padding: 0 }}>
+        {loading ? (
+          <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+        ) : displayedCitizens.length === 0 ? (
+          <div className="empty-row">No citizens found.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data">
+              <thead>
+                <tr><th>Reference</th><th>Full name</th><th>Phone</th><th>Email</th><th>ID proof</th><th>Registered</th></tr>
+              </thead>
+              <tbody>
+                {displayedCitizens.map((c) => (
+                  <tr key={c.referenceNumber || c.id}>
+                    <td><LedgerTag>{c.referenceNumber}</LedgerTag></td>
+                    <td>{c.fullName}</td>
+                    <td>{c.phone}</td>
+                    <td>{c.email}</td>
+                    <td>{c.idProofType}</td>
+                    <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
