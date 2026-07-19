@@ -82,6 +82,8 @@ public class CitizenService {
                         .id(c.getId().toString())
                         .referenceNumber(c.getReferenceNumber())
                         .fullName(cryptoUtil.decrypt(c.getFullNameEncrypted()))
+                        .phone(cryptoUtil.decrypt(c.getPhoneEncrypted()))
+                        .email(cryptoUtil.decrypt(c.getEmailEncrypted()))
                         .idProofType(c.getIdProofType())
                         .createdAt(c.getCreatedAt().toString())
                         .build())
