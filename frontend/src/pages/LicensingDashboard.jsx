@@ -209,6 +209,11 @@ export default function LicensingDashboard() {
                             </td>
                             <td>
                               <div className="btn-row" style={{ marginTop: 0 }}>
+                                {a.status === 'SUBMITTED' && (
+                                    <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'ANTECEDENT_CHECK')}>
+                                      Send for antecedent check
+                                    </button>
+                                )}
                                 <button className="btn btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'APPROVED')}>Approve</button>
                                 <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REJECTED')}>Reject</button>
                                 <button className="btn btn-danger btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REVOKED')}>Revoke</button>
