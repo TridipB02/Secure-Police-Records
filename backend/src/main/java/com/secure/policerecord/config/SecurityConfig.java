@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/kyc/**").hasAnyRole("POLICE_OFFICER", "ADMIN", "CITIZEN")
                         .requestMatchers("/api/antecedent/**").hasAnyRole("ANTECEDENT_OFFICER", "ADMIN")
-                        .requestMatchers("/api/firearm/**").hasAnyRole("CITIZEN", "POLICE_OFFICER", "LICENSING_AUTHORITY", "ADMIN")
+                        .requestMatchers("/api/firearm/**").hasAnyRole("CITIZEN", "POLICE_OFFICER", "ANTECEDENT_OFFICER", "LICENSING_AUTHORITY", "ADMIN")
                         .requestMatchers("/api/records/**").hasAnyRole("POLICE_OFFICER", "ADMIN")
                         .requestMatchers("/api/audit/**").hasAnyRole("AUDIT_OFFICER", "ADMIN")
                         .anyRequest().authenticated()
