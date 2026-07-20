@@ -394,8 +394,27 @@ function AllCitizensPanel() {
           <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
         </div>
       </div>
-      <div className="panel-body" style={{ padding: 0 }}>
-        {loading ? (
+      {(detailLoading || detail) && (
+            <div className="panel-body" style={{ borderBottom: '1px solid var(--border)' }}>
+              {detailLoading ? (
+                  <span className="spinner dark" />
+              ) : (
+                  <div className="detail-grid">
+                    <div className="detail-item"><label>Full name</label><div>{detail.fullName}</div></div>
+                    <div className="detail-item"><label>Reference</label><div><LedgerTag>{detail.referenceNumber}</LedgerTag></div></div>
+                    <div className="detail-item"><label>{detail.idProofType}</label><div>{detail.idProofNumber}</div></div>
+                    <div className="detail-item"><label>Date of birth</label><div>{detail.dateOfBirth}</div></div>
+                    <div className="detail-item"><label>Phone</label><div>{detail.phone}</div></div>
+                    <div className="detail-item"><label>Address</label><div>{detail.address}</div></div>
+                    <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setDetail(null)}>Close</button>
+                    </div>
+                  </div>
+              )}
+            </div>
+        )}
+        <div className="panel-body" style={{ padding: 0 }}>
+          {loading ? (
           <div style={{ padding: 18 }}><span className="spinner dark" /></div>
         ) : displayedCitizens.length === 0 ? (
           <div className="empty-row">No citizens found.</div>
@@ -426,25 +445,6 @@ function AllCitizensPanel() {
           </div>
         )}
       </div>
-      {(detailLoading || detail) && (
-          <div className="panel-body" style={{ borderTop: '1px solid var(--border)' }}>
-            {detailLoading ? (
-                <span className="spinner dark" />
-            ) : (
-                <div className="detail-grid">
-                  <div className="detail-item"><label>Full name</label><div>{detail.fullName}</div></div>
-                  <div className="detail-item"><label>Reference</label><div><LedgerTag>{detail.referenceNumber}</LedgerTag></div></div>
-                  <div className="detail-item"><label>{detail.idProofType}</label><div>{detail.idProofNumber}</div></div>
-                  <div className="detail-item"><label>Date of birth</label><div>{detail.dateOfBirth}</div></div>
-                  <div className="detail-item"><label>Phone</label><div>{detail.phone}</div></div>
-                  <div className="detail-item"><label>Address</label><div>{detail.address}</div></div>
-                  <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setDetail(null)}>Close</button>
-                  </div>
-                </div>
-            )}
-          </div>
-      )}
     </div>
   );
 }
