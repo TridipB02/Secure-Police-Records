@@ -73,7 +73,7 @@ public class FirearmController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('POLICE_OFFICER', 'LICENSING_AUTHORITY', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('POLICE_OFFICER', 'ANTECEDENT_OFFICER', 'LICENSING_AUTHORITY', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<FirearmResponse>>> getByStatus(
             @PathVariable String status) {
         List<FirearmResponse> response = firearmService.getApplicationsByStatus(status);

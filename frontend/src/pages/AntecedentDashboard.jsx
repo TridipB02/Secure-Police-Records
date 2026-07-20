@@ -6,10 +6,11 @@ import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
 import RecordCard from '../components/RecordCard';
 
-const TABS = ['Submit report', 'My reports', 'Search by citizen', 'All citizens'];
+const TABS = ['Pending checks', 'Submit report', 'My reports', 'Search by citizen', 'All citizens'];
 
 export default function AntecedentDashboard() {
   const [tab, setTab] = useState(TABS[0]);
+  const [prefillRef, setPrefillRef] = useState('');
   return (
     <>
       <Navbar subtitle="Antecedent Verification" />
@@ -23,7 +24,8 @@ export default function AntecedentDashboard() {
             <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>{t}</button>
           ))}
         </div>
-        {tab === 'Submit report' && <SubmitPanel />}
+        {tab === 'Pending checks' && <PendingChecksPanel onGoToSubmit={(refNumber) => { setPrefillRef(refNumber); setTab('Submit report'); }} />}
+        {tab === 'Submit report' && <SubmitPanel prefillRef={prefillRef} />}
         {tab === 'My reports' && <MyReportsPanel />}
         {tab === 'Search by citizen' && <SearchByCitizenPanel />}
         {tab === 'All citizens' && <AllCitizensPanel />}
@@ -41,8 +43,76 @@ const initialForm = {
   overallStatus: 'CLEAR',
 };
 
-function SubmitPanel() {
+function PendingChecksPanel({ onGoToSubmit }) {
+  const [apps, setApps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/firearm/status/ANTECEDENT_CHECK');
+      setApps(unwrap(res) || []);
+    } catch (err) {
+      toast.error('Could not load pending checks', apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  return (
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Pending antecedent checks</h2>
+          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+        </div>
+        <div className="panel-body" style={{ padding: 0 }}>
+          {loading ? (
+              <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+          ) : apps.length === 0 ? (
+              <div className="empty-row">No firearm applications currently awaiting antecedent check.</div>
+          ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data">
+                  <thead>
+                    <tr><th>Application</th><th>Citizen</th><th>Weapon</th><th>Applied</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {apps.map((a) => (
+                        <tr key={a.applicationNumber}>
+                          <td><LedgerTag>{a.applicationNumber}</LedgerTag></td>
+                          <td>
+                            <div style={{ fontWeight: 500, marginBottom: 2 }}>{a.citizenName || '—'}</div>
+                            <LedgerTag truncate={22}>{a.citizenReference}</LedgerTag>
+                          </td>
+                          <td>{a.weaponType}</td>
+                          <td>{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—'}</td>
+                          <td>
+                            <button className="btn btn-sm" onClick={() => onGoToSubmit(a.citizenReference)}>
+                              Submit report
+                            </button>
+                          </td>
+                        </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          )}
+        </div>
+      </div>
+  );
+}
+
+function SubmitPanel({ prefillRef }) {
   const [form, setForm] = useState(initialForm);
+
+  useEffect(() => {
+    if (prefillRef) {
+      setForm((f) => ({ ...f, citizenReferenceNumber: prefillRef }));
+    }
+  }, [prefillRef]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [citizenRecords, setCitizenRecords] = useState(null);
