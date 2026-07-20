@@ -56,6 +56,12 @@ export default function CitizenDashboard() {
                       </div>
                       <div style={{ fontWeight: 500 }}>{profile.fullName}</div>
                     </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>
+                        {profile.idProofType || 'ID Proof'}
+                      </div>
+                      <div style={{ fontWeight: 500 }}>{profile.idProofNumber}</div>
+                    </div>
                   </>
               ) : (
                   <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Profile unavailable.</div>

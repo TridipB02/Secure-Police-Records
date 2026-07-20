@@ -325,7 +325,22 @@ function AllCitizensPanel() {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchText, setSearchText] = useState('');
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const toast = useToast();
+
+  const viewDetail = async (referenceNumber) => {
+    setDetailLoading(true);
+    setDetail(null);
+    try {
+      const res = await api.get(`/api/citizens/${referenceNumber}`);
+      setDetail(unwrap(res));
+    } catch (err) {
+      toast.error('Could not load citizen details', apiErrorMessage(err));
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -388,7 +403,7 @@ function AllCitizensPanel() {
           <div style={{ overflowX: 'auto' }}>
             <table className="data">
               <thead>
-                <tr><th>Reference</th><th>Full name</th><th>Phone</th><th>Email</th><th>ID proof</th><th>Registered</th></tr>
+                <tr><th>Reference</th><th>Full name</th><th>Phone</th><th>Email</th><th>ID proof</th><th>Registered</th><th></th></tr>
               </thead>
               <tbody>
                 {displayedCitizens.map((c) => (
@@ -399,6 +414,11 @@ function AllCitizensPanel() {
                     <td>{c.email}</td>
                     <td>{c.idProofType}</td>
                     <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
+                    <td>
+                      <button className="btn btn-secondary btn-sm" onClick={() => viewDetail(c.referenceNumber)}>
+                        View ID
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -406,6 +426,25 @@ function AllCitizensPanel() {
           </div>
         )}
       </div>
+      {(detailLoading || detail) && (
+          <div className="panel-body" style={{ borderTop: '1px solid var(--border)' }}>
+            {detailLoading ? (
+                <span className="spinner dark" />
+            ) : (
+                <div className="detail-grid">
+                  <div className="detail-item"><label>Full name</label><div>{detail.fullName}</div></div>
+                  <div className="detail-item"><label>Reference</label><div><LedgerTag>{detail.referenceNumber}</LedgerTag></div></div>
+                  <div className="detail-item"><label>{detail.idProofType}</label><div>{detail.idProofNumber}</div></div>
+                  <div className="detail-item"><label>Date of birth</label><div>{detail.dateOfBirth}</div></div>
+                  <div className="detail-item"><label>Phone</label><div>{detail.phone}</div></div>
+                  <div className="detail-item"><label>Address</label><div>{detail.address}</div></div>
+                  <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setDetail(null)}>Close</button>
+                  </div>
+                </div>
+            )}
+          </div>
+      )}
     </div>
   );
 }

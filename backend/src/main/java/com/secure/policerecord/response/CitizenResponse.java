@@ -18,5 +18,6 @@ public class CitizenResponse {
     private String phone;
     private String email;
     private String idProofType;
+    private String idProofNumber;
     private String createdAt;
 }

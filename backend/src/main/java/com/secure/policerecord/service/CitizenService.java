@@ -71,6 +71,7 @@ public class CitizenService {
                 .phone(cryptoUtil.decrypt(citizen.getPhoneEncrypted()))
                 .email(cryptoUtil.decrypt(citizen.getEmailEncrypted()))
                 .idProofType(citizen.getIdProofType())
+                .idProofNumber(cryptoUtil.decrypt(citizen.getIdProofNumberEncrypted()))
                 .createdAt(citizen.getCreatedAt().toString())
                 .build();
     }
