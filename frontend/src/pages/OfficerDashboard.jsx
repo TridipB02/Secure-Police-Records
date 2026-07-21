@@ -234,8 +234,8 @@ function VerifiedKycPanel() {
         <div className="panel-body" style={{ padding: 0 }}>
           {loading ? (
               <div style={{ padding: 18 }}><span className="spinner dark" /></div>
-          ) : requests.length === 0 ? (
-              <div className="empty-row">No verified KYC requests.</div>
+          ) : displayedRequests.length === 0 ? (
+              <div className="empty-row">No verified KYC requests awaiting certification.</div>
           ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table className="data">
@@ -243,7 +243,7 @@ function VerifiedKycPanel() {
                     <tr><th>Request</th><th>Citizen</th><th>Verified</th><th>Actions</th></tr>
                   </thead>
                   <tbody>
-                    {requests.map((r) => (
+                    {displayedRequests.map((r) => (
                         <tr key={r.requestNumber}>
                           <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
                           <td>
