@@ -180,6 +180,8 @@ function VerifiedKycPanel() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [certificates, setCertificates] = useState({});
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
   const toast = useToast();
 
   const load = async () => {
@@ -195,6 +197,23 @@ function VerifiedKycPanel() {
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const displayedRequests = requests
+    .filter((r) => !certificates[r.requestNumber])
+    .filter((r) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (r.citizenName || '').toLowerCase().includes(q) ||
+        (r.citizenReference || '').toLowerCase().includes(q) ||
+        (r.requestNumber || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.verifiedAt || 0).getTime();
+      const dateB = new Date(b.verifiedAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
   const genCertificate = async (requestNumber) => {
     setBusyId(requestNumber);
@@ -229,7 +248,22 @@ function VerifiedKycPanel() {
       <div className="panel">
         <div className="panel-header">
           <h2>Verified KYC requests</h2>
-          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              placeholder="Search citizen or request…"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+            >
+              Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          </div>
         </div>
         <div className="panel-body" style={{ padding: 0 }}>
           {loading ? (
