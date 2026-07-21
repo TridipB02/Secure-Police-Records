@@ -160,6 +160,7 @@ public class AuthService {
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll()
                 .stream()
+                .filter(User::getIsActive)
                 .map(u -> UserResponse.builder()
                         .username(u.getUsername())
                         .fullName(u.getFullName())
