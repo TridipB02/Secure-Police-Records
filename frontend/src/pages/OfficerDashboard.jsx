@@ -287,15 +287,9 @@ function VerifiedKycPanel() {
                           <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
                           <td>
                             <div className="btn-row" style={{ marginTop: 0 }}>
-                              {!certificates[r.requestNumber] ? (
-                                  <button className="btn btn-sm" disabled={busyId === r.requestNumber} onClick={() => genCertificate(r.requestNumber)}>
-                                    Generate certificate
-                                  </button>
-                              ) : (
-                                  <button className="btn btn-secondary btn-sm" onClick={() => downloadPdf(certificates[r.requestNumber].certificateId)}>
-                                    Download PDF
-                                  </button>
-                              )}
+                              <button className="btn btn-sm" disabled={busyId === r.requestNumber} onClick={() => genCertificate(r.requestNumber)}>
+                                Generate certificate
+                              </button>
                             </div>
                           </td>
                         </tr>
