@@ -6,7 +6,7 @@ import RecordCard from '../components/RecordCard';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
 
-const TABS = ['Pending KYC', 'Verified KYC', 'Register citizen', 'Police records'];
+const TABS = ['Pending KYC', 'Verified KYC', 'Certified KYC', 'Register citizen', 'Police records'];
 
 export default function OfficerDashboard() {
   const [tab, setTab] = useState(TABS[0]);
@@ -25,6 +25,7 @@ export default function OfficerDashboard() {
           </div>
           {tab === 'Pending KYC' && <PendingKycPanel />}
           {tab === 'Verified KYC' && <VerifiedKycPanel />}
+          {tab === 'Certified KYC' && <CertifiedKycPanel />}
           {tab === 'Register citizen' && <RegisterCitizenPanel />}
           {tab === 'Police records' && <RecordsPanel />}
         </main>
@@ -291,6 +292,124 @@ function VerifiedKycPanel() {
                                 Generate certificate
                               </button>
                             </div>
+                          </td>
+                        </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          )}
+        </div>
+      </div>
+  );
+}
+
+function CertifiedKycPanel() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [certIds, setCertIds] = useState({});
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
+  const toast = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/kyc/by-status/VERIFIED');
+      const all = unwrap(res) || [];
+      setRequests(all.filter((r) => r.hasCertificate));
+    } catch (err) {
+      toast.error('Could not load certified requests', apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const displayedRequests = requests
+    .filter((r) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (r.citizenName || '').toLowerCase().includes(q) ||
+        (r.citizenReference || '').toLowerCase().includes(q) ||
+        (r.requestNumber || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.verifiedAt || 0).getTime();
+      const dateB = new Date(b.verifiedAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+  const findAndDownload = async (r) => {
+    try {
+      const res = await api.get(`/api/certificates/citizen/${r.citizenReference}`);
+      const certs = unwrap(res) || [];
+      const match = certs.find((c) => c.certificateType === 'KYC_VERIFICATION');
+      if (!match) {
+        toast.error('Certificate not found', 'Could not locate the certificate record.');
+        return;
+      }
+      const pdfRes = await api.get(`/api/certificates/${match.certificateId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([pdfRes.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${match.certificateId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Download failed', apiErrorMessage(err));
+    }
+  };
+
+  return (
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Certified KYC requests</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              placeholder="Search citizen or request…"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+            >
+              Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          </div>
+        </div>
+        <div className="panel-body" style={{ padding: 0 }}>
+          {loading ? (
+              <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+          ) : displayedRequests.length === 0 ? (
+              <div className="empty-row">No certified KYC requests yet.</div>
+          ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data">
+                  <thead>
+                    <tr><th>Request</th><th>Citizen</th><th>Verified</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {displayedRequests.map((r) => (
+                        <tr key={r.requestNumber}>
+                          <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
+                          <td>
+                            <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                            <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
+                          </td>
+                          <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
+                          <td>
+                            <button className="btn btn-secondary btn-sm" onClick={() => findAndDownload(r)}>
+                              Download PDF
+                            </button>
                           </td>
                         </tr>
                     ))}
