@@ -199,7 +199,7 @@ function VerifiedKycPanel() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   const displayedRequests = requests
-    .filter((r) => !certificates[r.requestNumber])
+    .filter((r) => !r.hasCertificate)
     .filter((r) => {
       if (!searchText.trim()) return true;
       const q = searchText.trim().toLowerCase();
@@ -220,8 +220,8 @@ function VerifiedKycPanel() {
     try {
       const res = await api.post(`/api/certificates/kyc/${requestNumber}`);
       const data = unwrap(res);
-      setCertificates((c) => ({ ...c, [requestNumber]: data }));
       toast.success('Certificate generated', data.certificateId);
+      load();
     } catch (err) {
       toast.error('Certificate generation failed', apiErrorMessage(err));
     } finally {
