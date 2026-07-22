@@ -19,4 +19,5 @@ public class KycResponse {
     private String blockchainTxId;
     private String submittedAt;
     private String verifiedAt;
+    private Boolean hasCertificate;
 }

@@ -8,6 +8,7 @@ import com.secure.policerecord.request.KycSubmitRequest;
 import com.secure.policerecord.request.KycVerifyRequest;
 import com.secure.policerecord.response.KycResponse;
 import com.secure.policerecord.util.HashUtil;
+import com.secure.policerecord.util.CryptoUtil;
 import com.secure.policerecord.util.ReferenceGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,9 +27,11 @@ public class KycService {
     private final CitizenRepository citizenRepository;
     private final UserRepository userRepository;
     private final HashUtil hashUtil;
+    private final CryptoUtil cryptoUtil;
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
     private final FabricService fabricService;
+    private final CertificateRepository certificateRepository;
 
     @Transactional
     public KycResponse submitKycRequest(KycSubmitRequest request, String submittingUsername) {
@@ -176,6 +179,12 @@ public class KycService {
     }
 
     private KycResponse mapToResponse(com.secure.policerecord.model.KycRequest kycRequest) {
+        boolean hasCertificate = certificateRepository
+                .findByCitizenId(kycRequest.getCitizen().getId())
+                .stream()
+                .anyMatch(c -> "KYC_VERIFICATION".equals(c.getCertificateType())
+                        && kycRequest.getId().equals(c.getReferenceId()));
+
         return KycResponse.builder()
                 .id(kycRequest.getId().toString())
                 .requestNumber(kycRequest.getRequestNumber())
@@ -189,6 +198,7 @@ public class KycService {
                         kycRequest.getSubmittedAt().toString() : null)
                 .verifiedAt(kycRequest.getVerifiedAt() != null ?
                         kycRequest.getVerifiedAt().toString() : null)
+                .hasCertificate(hasCertificate)
                 .build();
     }
 }
