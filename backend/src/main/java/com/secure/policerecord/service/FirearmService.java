@@ -36,7 +36,7 @@ public class FirearmService {
     private final CertificateRepository certificateRepository;
 
     @Transactional
-    public FirearmResponse applyForLicense(FirearmRequest request) {
+    public FirearmResponse applyForLicense(FirearmRequest request, String applicantUsername) {
         Citizen citizen = citizenRepository
                 .findByReferenceNumber(request.getCitizenReferenceNumber())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -86,7 +86,7 @@ public class FirearmService {
         firearmRepository.save(application);
 
         auditService.logAction(
-                "SYSTEM", "FIREARM_APPLIED", "FIREARM_APPLICATION",
+                applicantUsername, "FIREARM_APPLIED", "FIREARM_APPLICATION",
                 applicationNumber,
                 "Firearm license applied for citizen: " + citizen.getReferenceNumber(),
                 null

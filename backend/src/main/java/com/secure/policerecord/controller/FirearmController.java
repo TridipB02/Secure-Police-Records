@@ -26,8 +26,9 @@ public class FirearmController {
     @PostMapping("/apply")
     @PreAuthorize("hasAnyRole('CITIZEN', 'ADMIN')")
     public ResponseEntity<ApiResponse<FirearmResponse>> applyForLicense(
-            @Valid @RequestBody FirearmRequest request) {
-        FirearmResponse response = firearmService.applyForLicense(request);
+            @Valid @RequestBody FirearmRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        FirearmResponse response = firearmService.applyForLicense(request, userDetails.getUsername());
         return ResponseEntity.ok(
                 ApiResponse.success("Firearm license application submitted", response));
     }
