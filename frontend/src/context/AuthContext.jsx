@@ -19,8 +19,11 @@ export function AuthProvider({ children }) {
     setUser(data);
   };
 
-  const logout = () => {
-    api.post('/api/auth/logout').catch(() => {});
+  const logout = async () => {
+    try {
+      await api.post('/api/auth/logout');
+    } catch (err) {
+    }
     localStorage.clear();
     setUser(null);
   };
