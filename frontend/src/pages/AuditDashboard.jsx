@@ -98,6 +98,7 @@ function AuditLogsPanel() {
   const [showingMine, setShowingMine] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchText, setSearchText] = useState('');
+  const [audience, setAudience] = useState('staff'); // 'staff' | 'citizen'
   const toast = useToast();
 
   const load = async (action, mine) => {
@@ -128,6 +129,7 @@ function AuditLogsPanel() {
   };
 
   const displayedLogs = logs
+    .filter((log) => (audience === 'citizen' ? log.actorRole === 'CITIZEN' : log.actorRole !== 'CITIZEN'))
     .filter((log) => {
       if (!searchText.trim()) return true;
       const q = searchText.trim().toLowerCase();
@@ -146,8 +148,26 @@ function AuditLogsPanel() {
 
   return (
       <div className="panel">
-        <div className="panel-header">
-          <h2>Audit trail</h2>
+        <div className="panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>Audit trail</h2>
+            <div className="tabs" style={{ marginBottom: 0 }}>
+              <button
+                  type="button"
+                  className={`tab ${audience === 'staff' ? 'active' : ''}`}
+                  onClick={() => setAudience('staff')}
+              >
+                Staff activity
+              </button>
+              <button
+                  type="button"
+                  className={`tab ${audience === 'citizen' ? 'active' : ''}`}
+                  onClick={() => setAudience('citizen')}
+              >
+                Citizen activity
+              </button>
+            </div>
+          </div>
           <form onSubmit={handleFilter} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
                 placeholder="Search actor, resource, action…"
