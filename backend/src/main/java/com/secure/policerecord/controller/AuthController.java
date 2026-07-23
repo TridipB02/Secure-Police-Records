@@ -66,4 +66,11 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.success("User deleted successfully", null));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        authService.logout(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
 }

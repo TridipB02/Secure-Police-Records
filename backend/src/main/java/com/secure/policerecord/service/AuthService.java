@@ -35,7 +35,8 @@ public class AuthService {
     private final CryptoUtil cryptoUtil;
     private final HashUtil hashUtil;
     private final ReferenceGenerator referenceGenerator;
-
+    private final AuditService auditService;
+    
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -53,12 +54,29 @@ public class AuthService {
                 user.getRole().name()
         );
 
+        auditService.logAction(
+                user.getUsername(), "LOGIN", "USER",
+                user.getUsername(),
+                "User logged in",
+                null
+        );
+
         return AuthResponse.builder()
                 .token(token)
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .fullName(user.getFullName())
                 .build();
+    }
+
+    @Transactional
+    public void logout(String username) {
+        auditService.logAction(
+                username, "LOGOUT", "USER",
+                username,
+                "User logged out",
+                null
+        );
     }
 
     public AuthResponse register(RegisterRequest request) {
