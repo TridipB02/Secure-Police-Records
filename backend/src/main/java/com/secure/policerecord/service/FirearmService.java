@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import com.secure.policerecord.repository.CertificateRepository;
-import com.secure.policerecord.model.CertificateStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -258,6 +256,7 @@ public class FirearmService {
                 .citizenReference(application.getCitizen().getReferenceNumber())
                 .citizenName(cryptoUtil.decrypt(application.getCitizen().getFullNameEncrypted()))
                 .weaponType(application.getWeaponType())
+                .purpose(cryptoUtil.decrypt(application.getPurposeEncrypted()))
                 .status(application.getStatus().name())
                 .licenseNumber(application.getLicenseNumber())
                 .issueDate(application.getIssueDate() != null

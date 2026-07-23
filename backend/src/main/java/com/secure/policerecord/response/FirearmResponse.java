@@ -15,6 +15,7 @@ public class FirearmResponse {
     private String citizenName;
     private String citizenReference;
     private String weaponType;
+    private String purpose;
     private String status;
     private String licenseNumber;
     private String issueDate;
