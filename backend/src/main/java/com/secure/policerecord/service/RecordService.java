@@ -224,6 +224,14 @@ public class RecordService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public List<PoliceRecordResponse> getAllRecords() {
+        return policeRecordRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(r -> mapToResponse(r, cryptoUtil.decrypt(r.getContentEncrypted())))
+                .collect(Collectors.toList());
+    }
+
     private PoliceRecordResponse mapToResponse(PoliceRecord record, String content) {
         String citizenName = null;
         String citizenReference = null;

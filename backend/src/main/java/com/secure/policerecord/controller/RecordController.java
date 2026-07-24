@@ -80,4 +80,12 @@ public class RecordController {
         return ResponseEntity.ok(
                 ApiResponse.success("Citizen records retrieved successfully", response));
     }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('POLICE_OFFICER', 'ANTECEDENT_OFFICER', 'AUDIT_OFFICER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<PoliceRecordResponse>>> getAllRecords() {
+        List<PoliceRecordResponse> response = recordService.getAllRecords();
+        return ResponseEntity.ok(
+                ApiResponse.success("All records retrieved successfully", response));
+    }
 }

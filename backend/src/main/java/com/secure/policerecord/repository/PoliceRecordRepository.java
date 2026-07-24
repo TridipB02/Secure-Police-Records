@@ -14,4 +14,5 @@ public interface PoliceRecordRepository extends JpaRepository<PoliceRecord, UUID
     Optional<PoliceRecord> findTopByRecordIdOrderByVersionDesc(String recordId);
     List<PoliceRecord> findByOfficerId(UUID officerId);
     List<PoliceRecord> findByCitizenIdOrderByCreatedAtDesc(UUID citizenId);
+    List<PoliceRecord> findAllByOrderByCreatedAtDesc();
 }
