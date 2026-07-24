@@ -755,3 +755,96 @@ function AllCitizensPanel() {
     </div>
   );
 }
+
+function AllFirsPanel() {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchText, setSearchText] = useState('');
+  const toast = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/records/all');
+      setRecords(unwrap(res) || []);
+    } catch (err) {
+      toast.error('Could not load records', apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const displayedRecords = records
+    .filter((r) => {
+      if (!searchText.trim()) return true;
+      const q = searchText.trim().toLowerCase();
+      return (
+        (r.citizenName || '').toLowerCase().includes(q) ||
+        (r.citizenReference || '').toLowerCase().includes(q) ||
+        (r.recordId || '').toLowerCase().includes(q) ||
+        (r.recordType || '').toLowerCase().includes(q) ||
+        (r.officerName || '').toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+  return (
+    <div className="panel">
+      <div className="panel-header">
+        <h2>All FIRs / police records</h2>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input
+            placeholder="Search citizen, record, officer…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+          >
+            Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+        </div>
+      </div>
+      <div className="panel-body" style={{ padding: 0 }}>
+        {loading ? (
+          <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+        ) : displayedRecords.length === 0 ? (
+          <div className="empty-row">No records found.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data">
+              <thead>
+                <tr><th>Record</th><th>Type</th><th>Citizen</th><th>Officer</th><th>Recorded</th></tr>
+              </thead>
+              <tbody>
+                {displayedRecords.map((r) => (
+                  <tr key={r.id}>
+                    <td><LedgerTag>{r.recordId}</LedgerTag></td>
+                    <td>{r.recordType}</td>
+                    <td>
+                      <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                      {r.citizenReference && <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>}
+                    </td>
+                    <td>{r.officerName}</td>
+                    <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
