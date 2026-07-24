@@ -164,7 +164,6 @@ function PendingKycPanel() {
                           <div className="btn-row" style={{ marginTop: 0 }}>
                             <button className="btn btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'VERIFIED')}>Verify</button>
                             <button className="btn btn-secondary btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'REJECTED')}>Reject</button>
-                            <button className="btn btn-secondary btn-sm" disabled={busyId === r.requestNumber} onClick={() => genCertificate(r.requestNumber)}>Certificate</button>
                           </div>
                         </td>
                       </tr>
