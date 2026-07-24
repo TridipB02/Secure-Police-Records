@@ -212,17 +212,27 @@ export default function LicensingDashboard() {
                             <td>
                               <div className="btn-row" style={{ marginTop: 0 }}>
                                 {a.status === 'SUBMITTED' && (
-                                    <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'ANTECEDENT_CHECK')}>
-                                      Send for antecedent check
-                                    </button>
+                                    <>
+                                      <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'ANTECEDENT_CHECK')}>
+                                        Send for antecedent check
+                                      </button>
+                                      <button className="btn btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'APPROVED')}>Approve</button>
+                                      <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REJECTED')}>Reject</button>
+                                    </>
                                 )}
-                                <button className="btn btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'APPROVED')}>Approve</button>
-                                <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REJECTED')}>Reject</button>
-                                <button className="btn btn-danger btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REVOKED')}>Revoke</button>
+                                {(a.status === 'ANTECEDENT_CHECK' || a.status === 'UNDER_REVIEW') && (
+                                    <>
+                                      <button className="btn btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'APPROVED')}>Approve</button>
+                                      <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REJECTED')}>Reject</button>
+                                    </>
+                                )}
                                 {a.status === 'APPROVED' && (
-                                    <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => generateCertificate(a.applicationNumber)}>
-                                      Certificate
-                                    </button>
+                                    <>
+                                      <button className="btn btn-secondary btn-sm" disabled={busyId === a.applicationNumber} onClick={() => generateCertificate(a.applicationNumber)}>
+                                        Certificate
+                                      </button>
+                                      <button className="btn btn-danger btn-sm" disabled={busyId === a.applicationNumber} onClick={() => updateStatus(a.applicationNumber, 'REVOKED')}>Revoke</button>
+                                    </>
                                 )}
                               </div>
                               {certificates[a.applicationNumber] && (
