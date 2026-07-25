@@ -6,7 +6,7 @@ import RecordCard from '../components/RecordCard';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
 
-const TABS = ['Pending KYC', 'Verified KYC', 'Certified KYC', 'Register citizen', 'Police records', 'All citizens', 'All FIRs'];
+const TABS = ['Pending KYC', 'Verified KYC', 'Certified KYC', 'Register citizen', 'Police records', 'All citizens', 'All records'];
 
 export default function OfficerDashboard() {
   const [tab, setTab] = useState(TABS[0]);
@@ -29,7 +29,7 @@ export default function OfficerDashboard() {
           {tab === 'Register citizen' && <RegisterCitizenPanel />}
           {tab === 'Police records' && <RecordsPanel />}
           {tab === 'All citizens' && <AllCitizensPanel />}
-          {tab === 'All FIRs' && <AllFirsPanel />}
+          {tab === 'All records' && <AllFirsPanel />}
         </main>
       </>
   );
