@@ -228,7 +228,15 @@ public class RecordService {
     public List<PoliceRecordResponse> getAllRecords() {
         return policeRecordRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(r -> mapToResponse(r, cryptoUtil.decrypt(r.getContentEncrypted())))
+                .map(r -> {
+                    String content;
+                    try {
+                        content = cryptoUtil.decrypt(r.getContentEncrypted());
+                    } catch (Exception e) {
+                        content = "[Unable to decrypt content — corrupted or legacy record]";
+                    }
+                    return mapToResponse(r, content);
+                })
                 .collect(Collectors.toList());
     }
 
