@@ -169,6 +169,8 @@ public class AntecedentService {
                 .id(report.getId().toString())
                 .reportNumber(report.getReportNumber())
                 .citizenReference(report.getCitizen().getReferenceNumber())
+                .firHistory(report.getFirHistoryEncrypted() != null
+                        ? cryptoUtil.decrypt(report.getFirHistoryEncrypted()) : null)
                 .citizenName(cryptoUtil.decrypt(report.getCitizen().getFullNameEncrypted()))
                 .officerName(report.getOfficer() != null
                         ? report.getOfficer().getFullName() : "Unassigned")

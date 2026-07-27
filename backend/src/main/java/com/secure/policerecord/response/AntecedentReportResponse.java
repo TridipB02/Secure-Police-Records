@@ -22,4 +22,5 @@ public class AntecedentReportResponse {
     private String reportHash;
     private String blockchainTxId;
     private String submittedAt;
+    private String firHistory;
 }
