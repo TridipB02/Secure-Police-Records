@@ -199,6 +199,7 @@ public class KycService {
                 .verifiedAt(kycRequest.getVerifiedAt() != null ?
                         kycRequest.getVerifiedAt().toString() : null)
                 .hasCertificate(hasCertificate)
+                .remarks(kycRequest.getVerificationRemarksEncrypted())
                 .build();
     }
 }

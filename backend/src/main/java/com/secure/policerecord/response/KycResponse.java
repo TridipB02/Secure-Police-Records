@@ -20,4 +20,5 @@ public class KycResponse {
     private String submittedAt;
     private String verifiedAt;
     private Boolean hasCertificate;
+    private String remarks;
 }
