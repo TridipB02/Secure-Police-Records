@@ -265,6 +265,10 @@ public class FirearmService {
                         ? application.getExpiryDate().toString() : null)
                 .blockchainTxId(application.getBlockchainTxId())
                 .biometricVerified(application.getBiometricVerified())
+                .rejectionReason(application.getRejectionReasonEncrypted() != null
+                        ? cryptoUtil.decrypt(application.getRejectionReasonEncrypted()) : null)
+                .revocationReason(application.getRevocationReasonEncrypted() != null
+                        ? cryptoUtil.decrypt(application.getRevocationReasonEncrypted()) : null)
                 .createdAt(LocalDateTime.now().toString())
                 .build();
     }

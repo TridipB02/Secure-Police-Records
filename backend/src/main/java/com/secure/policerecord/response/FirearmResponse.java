@@ -23,4 +23,6 @@ public class FirearmResponse {
     private String blockchainTxId;
     private Boolean biometricVerified;
     private String createdAt;
+    private String rejectionReason;
+    private String revocationReason;
 }
