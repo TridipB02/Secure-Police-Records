@@ -73,4 +73,16 @@ public class AntecedentController {
         return ResponseEntity.ok(
                 ApiResponse.success("Officer reports retrieved successfully", response));
     }
+
+    @PutMapping("/{reportNumber}")
+    @PreAuthorize("hasAnyRole('ANTECEDENT_OFFICER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<AntecedentReportResponse>> updateReport(
+            @PathVariable String reportNumber,
+            @Valid @RequestBody AntecedentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        AntecedentReportResponse response = antecedentService
+                .updateAntecedentReport(reportNumber, request, userDetails.getUsername());
+        return ResponseEntity.ok(
+                ApiResponse.success("Antecedent report updated successfully", response));
+    }
 }

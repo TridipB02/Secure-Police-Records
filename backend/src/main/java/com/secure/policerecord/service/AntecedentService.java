@@ -131,6 +131,39 @@ public class AntecedentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public AntecedentReportResponse updateAntecedentReport(String reportNumber, AntecedentRequest request, String officerUsername) {
+        AntecedentReport report = antecedentRepository.findByReportNumber(reportNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Report not found: " + reportNumber));
+
+        User officer = userRepository.findByUsername(officerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Officer not found: " + officerUsername));
+
+        AntecedentStatus status = AntecedentStatus.valueOf(request.getOverallStatus().toUpperCase());
+
+        report.setFirHistoryEncrypted(request.getFirHistory() != null ? cryptoUtil.encrypt(request.getFirHistory()) : null);
+        report.setConvictionStatus(request.getConvictionStatus());
+        report.setPendingCases(request.getPendingCases() != null ? request.getPendingCases() : 0);
+        report.setBlacklistFlag(request.getBlacklistFlag() != null ? request.getBlacklistFlag() : false);
+        report.setOverallStatus(status);
+        report.setOfficer(officer);
+
+        String updatedHash = hashUtil.generateSHA256(
+                report.getReportNumber() + status.name() + LocalDateTime.now());
+        report.setReportHash(updatedHash);
+
+        antecedentRepository.save(report);
+
+        auditService.logAction(
+                officerUsername, "ANTECEDENT_UPDATED", "ANTECEDENT_REPORT",
+                reportNumber,
+                "Antecedent report updated — status: " + status.name(),
+                null
+        );
+
+        return mapToResponse(report);
+    }
+
     private AntecedentReportResponse mapToResponse(AntecedentReport report) {
         return AntecedentReportResponse.builder()
                 .id(report.getId().toString())
