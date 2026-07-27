@@ -202,12 +202,18 @@ export default function LicensingDashboard() {
                               ) : '—'}
                             </td>
                             <td>
-                              <input
-                                  placeholder="Reason (reject/revoke/cert)"
-                                  value={reasonMap[a.applicationNumber] || ''}
-                                  onChange={(e) => setReasonMap((m) => ({ ...m, [a.applicationNumber]: e.target.value }))}
-                                  style={{ padding: '5px 8px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 170 }}
-                              />
+                              {(a.status === 'REJECTED' || a.status === 'REVOKED') ? (
+                                  <div style={{ fontSize: 12, color: 'var(--ink-soft)', maxWidth: 170, whiteSpace: 'normal' }}>
+                                    {(a.status === 'REJECTED' ? a.rejectionReason : a.revocationReason) || 'No reason recorded'}
+                                  </div>
+                              ) : (
+                                  <input
+                                      placeholder="Reason (reject/revoke)"
+                                      value={reasonMap[a.applicationNumber] || ''}
+                                      onChange={(e) => setReasonMap((m) => ({ ...m, [a.applicationNumber]: e.target.value }))}
+                                      style={{ padding: '5px 8px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 170 }}
+                                  />
+                              )}
                             </td>
                             <td>
                               <div className="btn-row" style={{ marginTop: 0 }}>
