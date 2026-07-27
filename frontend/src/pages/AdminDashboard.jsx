@@ -187,6 +187,8 @@ function AllCitizensPanel() {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchText, setSearchText] = useState('');
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const toast = useToast();
 
   const load = async () => {
@@ -203,72 +205,109 @@ function AllCitizensPanel() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
+  const viewDetail = async (referenceNumber) => {
+    setDetailLoading(true);
+    setDetail(null);
+    try {
+      const res = await api.get(`/api/citizens/${referenceNumber}`);
+      setDetail(unwrap(res));
+    } catch (err) {
+      toast.error('Could not load citizen details', apiErrorMessage(err));
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const displayedCitizens = citizens
-    .filter((c) => {
-      if (!searchText.trim()) return true;
-      const q = searchText.trim().toLowerCase();
-      return (
-        (c.fullName || '').toLowerCase().includes(q) ||
-        (c.referenceNumber || '').toLowerCase().includes(q) ||
-        (c.phone || '').toLowerCase().includes(q) ||
-        (c.email || '').toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+      .filter((c) => {
+        if (!searchText.trim()) return true;
+        const q = searchText.trim().toLowerCase();
+        return (
+            (c.fullName || '').toLowerCase().includes(q) ||
+            (c.referenceNumber || '').toLowerCase().includes(q) ||
+            (c.phone || '').toLowerCase().includes(q) ||
+            (c.email || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <h2>All registered citizens</h2>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input
-            placeholder="Search name, ref, phone, email…"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-          />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
-          >
-            Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
-          </button>
-          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+      <div className="panel">
+        <div className="panel-header">
+          <h2>All registered citizens</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+                placeholder="Search name, ref, phone, email…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+            />
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+            >
+              Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          </div>
+        </div>
+        {(detailLoading || detail) && (
+            <div className="panel-body" style={{ borderBottom: '1px solid var(--border)' }}>
+              {detailLoading ? (
+                  <span className="spinner dark" />
+              ) : (
+                  <div className="detail-grid">
+                    <div className="detail-item"><label>Full name</label><div>{detail.fullName}</div></div>
+                    <div className="detail-item"><label>Reference</label><div><LedgerTag>{detail.referenceNumber}</LedgerTag></div></div>
+                    <div className="detail-item"><label>{detail.idProofType}</label><div>{detail.idProofNumber}</div></div>
+                    <div className="detail-item"><label>Date of birth</label><div>{detail.dateOfBirth}</div></div>
+                    <div className="detail-item"><label>Phone</label><div>{detail.phone}</div></div>
+                    <div className="detail-item"><label>Address</label><div>{detail.address}</div></div>
+                    <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setDetail(null)}>Close</button>
+                    </div>
+                  </div>
+              )}
+            </div>
+        )}
+        <div className="panel-body" style={{ padding: 0 }}>
+          {loading ? (
+              <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+          ) : displayedCitizens.length === 0 ? (
+              <div className="empty-row">No citizens found.</div>
+          ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data">
+                  <thead>
+                  <tr><th>Reference</th><th>Full name</th><th>Phone</th><th>Email</th><th>ID proof</th><th>Registered</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                  {displayedCitizens.map((c) => (
+                      <tr key={c.referenceNumber || c.id}>
+                        <td><LedgerTag>{c.referenceNumber}</LedgerTag></td>
+                        <td>{c.fullName}</td>
+                        <td>{c.phone}</td>
+                        <td>{c.email}</td>
+                        <td>{c.idProofType}</td>
+                        <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
+                        <td>
+                          <button className="btn btn-secondary btn-sm" onClick={() => viewDetail(c.referenceNumber)}>
+                            View ID
+                          </button>
+                        </td>
+                      </tr>
+                  ))}
+                  </tbody>
+                </table>
+              </div>
+          )}
         </div>
       </div>
-      <div className="panel-body" style={{ padding: 0 }}>
-        {loading ? (
-          <div style={{ padding: 18 }}><span className="spinner dark" /></div>
-        ) : displayedCitizens.length === 0 ? (
-          <div className="empty-row">No citizens found.</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data">
-              <thead>
-                <tr><th>Reference</th><th>Full name</th><th>Phone</th><th>Email</th><th>ID proof</th><th>Registered</th></tr>
-              </thead>
-              <tbody>
-                {displayedCitizens.map((c) => (
-                  <tr key={c.referenceNumber || c.id}>
-                    <td><LedgerTag>{c.referenceNumber}</LedgerTag></td>
-                    <td>{c.fullName}</td>
-                    <td>{c.phone}</td>
-                    <td>{c.email}</td>
-                    <td>{c.idProofType}</td>
-                    <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
 
