@@ -42,6 +42,7 @@ export default function AuditDashboard() {
 }
 
 function TamperPanel() {
+  const [checkType, setCheckType] = useState('record');
   const [recordId, setRecordId] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,10 @@ function TamperPanel() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await api.get(`/api/records/verify/${recordId.trim()}`);
+      const url = checkType === 'antecedent'
+          ? `/api/antecedent/verify/${recordId.trim()}`
+          : `/api/records/verify/${recordId.trim()}`;
+      const res = await api.get(url);
       const data = unwrap(res);
       setResult(data);
       toast.success('Verification complete', data.tampered ? 'Tampering detected.' : 'Record is intact.');
@@ -68,14 +72,30 @@ function TamperPanel() {
       <div className="tamper-panel">
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Run a tamper check</h2>
         <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 16px' }}>
-          Compares the database record hash against the hash anchored on the blockchain.
+          Compares the database hash against the hash anchored on the blockchain.
         </p>
+        <div className="tabs" style={{ marginBottom: 16 }}>
+          <button
+              type="button"
+              className={`tab ${checkType === 'record' ? 'active' : ''}`}
+              onClick={() => { setCheckType('record'); setResult(null); setRecordId(''); }}
+          >
+            Police record
+          </button>
+          <button
+              type="button"
+              className={`tab ${checkType === 'antecedent' ? 'active' : ''}`}
+              onClick={() => { setCheckType('antecedent'); setResult(null); setRecordId(''); }}
+          >
+            Antecedent report
+          </button>
+        </div>
         <form onSubmit={runCheck} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div className="field" style={{ marginBottom: 0, minWidth: 260, flex: 1 }}>
-            <label htmlFor="recordId">Record ID</label>
+            <label htmlFor="recordId">{checkType === 'antecedent' ? 'Report ID' : 'Record ID'}</label>
             <input
                 id="recordId"
-                placeholder="REC-20260705120859-F95EF4"
+                placeholder={checkType === 'antecedent' ? 'ANT-20260705120859-F95EF4' : 'REC-20260705120859-F95EF4'}
                 value={recordId}
                 onChange={(e) => setRecordId(e.target.value)}
             />
