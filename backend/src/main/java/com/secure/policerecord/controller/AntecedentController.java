@@ -3,6 +3,7 @@ package com.secure.policerecord.controller;
 import com.secure.policerecord.request.AntecedentRequest;
 import com.secure.policerecord.response.AntecedentReportResponse;
 import com.secure.policerecord.response.ApiResponse;
+import com.secure.policerecord.response.TamperCheckResponse;
 import com.secure.policerecord.service.AntecedentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/antecedent")
@@ -84,5 +84,14 @@ public class AntecedentController {
                 .updateAntecedentReport(reportNumber, request, userDetails.getUsername());
         return ResponseEntity.ok(
                 ApiResponse.success("Antecedent report updated successfully", response));
+    }
+
+    @GetMapping("/verify/{reportNumber}")
+    @PreAuthorize("hasAnyRole('ANTECEDENT_OFFICER', 'AUDIT_OFFICER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<TamperCheckResponse>> verifyReport(
+            @PathVariable String reportNumber) {
+        TamperCheckResponse response = antecedentService.verifyAntecedentReport(reportNumber);
+        return ResponseEntity.ok(
+                ApiResponse.success("Antecedent report verification completed", response));
     }
 }
