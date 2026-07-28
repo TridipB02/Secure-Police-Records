@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.secure.policerecord.response.AntecedentReportResponse;
+import com.secure.policerecord.response.TamperCheckResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +29,8 @@ public class AntecedentService {
     private final HashUtil hashUtil;
     private final ReferenceGenerator referenceGenerator;
     private final AuditService auditService;
-    
+    private final FabricService fabricService;
+
     @Transactional
     public AntecedentReportResponse submitAntecedentReport(
             AntecedentRequest request, String officerUsername) {
@@ -79,6 +81,13 @@ public class AntecedentService {
                 null
         );
 
+        String txId = fabricService.storeAntecedentHash(
+                reportNumber, citizen.getReferenceNumber(), reportHash, status.name(), officerUsername);
+        if (txId != null) {
+            report.setBlockchainTxId(txId);
+            antecedentRepository.save(report);
+        }
+
         return mapToResponse(report);
     }
 
@@ -98,7 +107,7 @@ public class AntecedentService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional(readOnly = true)
     public List<AntecedentReportResponse> getReportsByStatus(String status) {
         AntecedentStatus antecedentStatus = AntecedentStatus.valueOf(
@@ -161,7 +170,34 @@ public class AntecedentService {
                 null
         );
 
+        String txId = fabricService.storeAntecedentHash(
+                reportNumber, report.getCitizen().getReferenceNumber(), updatedHash, status.name(), officerUsername);
+        if (txId != null) {
+            report.setBlockchainTxId(txId);
+            antecedentRepository.save(report);
+        }
+
         return mapToResponse(report);
+    }
+
+    @Transactional(readOnly = true)
+    public TamperCheckResponse verifyAntecedentReport(String reportNumber) {
+        AntecedentReport report = antecedentRepository.findByReportNumber(reportNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Report not found: " + reportNumber));
+
+        boolean fabricVerified = false;
+        if (report.getBlockchainTxId() != null) {
+            fabricVerified = fabricService.verifyAntecedentIntegrity(reportNumber, report.getReportHash());
+        }
+
+        return TamperCheckResponse.builder()
+                .recordId(reportNumber)
+                .status(fabricVerified ? "INTACT" : "TAMPERED")
+                .dbHash(report.getReportHash())
+                .blockchainHash(report.getBlockchainTxId() != null ? report.getBlockchainTxId() : "Not anchored yet")
+                .tampered(!fabricVerified)
+                .checkedAt(LocalDateTime.now().toString())
+                .build();
     }
 
     private AntecedentReportResponse mapToResponse(AntecedentReport report) {
@@ -169,9 +205,9 @@ public class AntecedentService {
                 .id(report.getId().toString())
                 .reportNumber(report.getReportNumber())
                 .citizenReference(report.getCitizen().getReferenceNumber())
+                .citizenName(cryptoUtil.decrypt(report.getCitizen().getFullNameEncrypted()))
                 .firHistory(report.getFirHistoryEncrypted() != null
                         ? cryptoUtil.decrypt(report.getFirHistoryEncrypted()) : null)
-                .citizenName(cryptoUtil.decrypt(report.getCitizen().getFullNameEncrypted()))
                 .officerName(report.getOfficer() != null
                         ? report.getOfficer().getFullName() : "Unassigned")
                 .convictionStatus(report.getConvictionStatus())
