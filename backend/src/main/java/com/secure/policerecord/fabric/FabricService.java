@@ -124,6 +124,18 @@ public class FabricService {
         }
     }
 
+    public boolean verifyAntecedentIntegrity(String reportNumber, String currentHash) {
+        try {
+            Contract contract = getContract();
+            byte[] result = contract.evaluateTransaction(
+                    "VerifyAntecedentIntegrity", reportNumber, currentHash);
+            return Boolean.parseBoolean(new String(result, StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            log.error("Failed to verify antecedent integrity on Fabric: {}", e.getMessage());
+            return false;
+        }
+    }
+
     public String revokeFirearmLicense(String applicationNumber,
             String reason, String officerId) {
         try {
