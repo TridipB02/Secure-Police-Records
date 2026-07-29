@@ -136,6 +136,17 @@ public class FabricService {
         }
     }
 
+    public String getAntecedentHash(String reportNumber) {
+        try {
+            Contract contract = getContract();
+            byte[] result = contract.evaluateTransaction("GetAntecedentHash", reportNumber);
+            return new String(result, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("Failed to get antecedent hash from Fabric: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public String revokeFirearmLicense(String applicationNumber,
             String reason, String officerId) {
         try {
