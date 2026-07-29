@@ -2,6 +2,7 @@ package com.secure.policerecord.service;
 
 import com.secure.policerecord.exception.BadRequestException;
 import com.secure.policerecord.exception.ResourceNotFoundException;
+import com.secure.policerecord.fabric.FabricService;
 import com.secure.policerecord.model.*;
 import com.secure.policerecord.repository.*;
 import com.secure.policerecord.request.AntecedentRequest;
@@ -186,15 +187,28 @@ public class AntecedentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found: " + reportNumber));
 
         boolean fabricVerified = false;
+        String onChainHash = "Not anchored yet";
+
         if (report.getBlockchainTxId() != null) {
             fabricVerified = fabricService.verifyAntecedentIntegrity(reportNumber, report.getReportHash());
+
+            String rawJson = fabricService.getAntecedentHash(reportNumber);
+            if (rawJson != null) {
+                try {
+                    com.fasterxml.jackson.databind.JsonNode node =
+                            new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawJson);
+                    onChainHash = node.get("hash").asText();
+                } catch (Exception e) {
+                    onChainHash = "Unable to parse on-chain record";
+                }
+            }
         }
 
         return TamperCheckResponse.builder()
                 .recordId(reportNumber)
                 .status(fabricVerified ? "INTACT" : "TAMPERED")
                 .dbHash(report.getReportHash())
-                .blockchainHash(report.getBlockchainTxId() != null ? report.getBlockchainTxId() : "Not anchored yet")
+                .blockchainHash(onChainHash)
                 .tampered(!fabricVerified)
                 .checkedAt(LocalDateTime.now().toString())
                 .build();
