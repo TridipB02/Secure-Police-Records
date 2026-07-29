@@ -211,7 +211,17 @@ public class RecordService {
         if (latest.getBlockchainTxId() != null) {
             fabricVerified = fabricService.verifyRecordIntegrity(
                     recordId, latest.getCurrentHash());
-            blockchainHash = latest.getBlockchainTxId();
+
+            String rawJson = fabricService.getRecordHash(recordId);
+            if (rawJson != null) {
+                try {
+                    com.fasterxml.jackson.databind.JsonNode node =
+                            new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawJson);
+                    blockchainHash = node.get("hash").asText();
+                } catch (Exception e) {
+                    blockchainHash = "Unable to parse on-chain record";
+                }
+            }
         }
 
         return TamperCheckResponse.builder()
