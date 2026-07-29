@@ -148,18 +148,19 @@ function KycPanel({ profile }) {
                 <div style={{ overflowX: 'auto' }}>
                   <table className="data">
                     <thead>
-                      <tr><th>Request</th><th>Status</th><th>Assigned officer</th><th>Submitted</th><th>Verified</th></tr>
+                    <tr><th>Request</th><th>Status</th><th>Assigned officer</th><th>Submitted</th><th>Verified</th><th>Remarks</th></tr>
                     </thead>
                     <tbody>
-                      {requests.map((r) => (
-                          <tr key={r.requestNumber}>
-                            <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
-                            <td><StatusBadge status={r.status} /></td>
-                            <td>{r.assignedOfficer}</td>
-                            <td>{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '—'}</td>
-                            <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleString() : 'Not yet'}</td>
-                          </tr>
-                      ))}
+                    {requests.map((r) => (
+                        <tr key={r.requestNumber}>
+                          <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
+                          <td><StatusBadge status={r.status} /></td>
+                          <td>{r.assignedOfficer}</td>
+                          <td>{r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '—'}</td>
+                          <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleString() : 'Not yet'}</td>
+                          <td>{r.status === 'REJECTED' ? (r.remarks || 'No reason recorded') : '—'}</td>
+                        </tr>
+                    ))}
                     </tbody>
                   </table>
                 </div>
