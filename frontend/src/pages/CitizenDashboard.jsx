@@ -289,18 +289,25 @@ function FirearmPanel({ profile }) {
                 <div style={{ overflowX: 'auto' }}>
                   <table className="data">
                     <thead>
-                      <tr><th>Application</th><th>Weapon</th><th>Status</th><th>License</th><th>Expiry</th></tr>
+                    <tr><th>Application</th><th>Weapon</th><th>Status</th><th>License</th><th>Expiry</th><th>Reason</th></tr>
                     </thead>
                     <tbody>
-                      {apps.map((a) => (
-                          <tr key={a.applicationNumber}>
-                            <td><LedgerTag>{a.applicationNumber}</LedgerTag></td>
-                            <td>{a.weaponType}</td>
-                            <td><StatusBadge status={a.status} /></td>
-                            <td>{a.licenseNumber ? <LedgerTag>{a.licenseNumber}</LedgerTag> : 'Not issued'}</td>
-                            <td>{a.expiryDate ? new Date(a.expiryDate).toLocaleDateString() : '—'}</td>
-                          </tr>
-                      ))}
+                    {apps.map((a) => (
+                        <tr key={a.applicationNumber}>
+                          <td><LedgerTag>{a.applicationNumber}</LedgerTag></td>
+                          <td>{a.weaponType}</td>
+                          <td><StatusBadge status={a.status} /></td>
+                          <td>{a.licenseNumber ? <LedgerTag>{a.licenseNumber}</LedgerTag> : 'Not issued'}</td>
+                          <td>{a.expiryDate ? new Date(a.expiryDate).toLocaleDateString() : '—'}</td>
+                          <td>
+                            {a.status === 'REJECTED'
+                                ? (a.rejectionReason || 'No reason recorded')
+                                : a.status === 'REVOKED'
+                                    ? (a.revocationReason || 'No reason recorded')
+                                    : '—'}
+                          </td>
+                        </tr>
+                    ))}
                     </tbody>
                   </table>
                 </div>
