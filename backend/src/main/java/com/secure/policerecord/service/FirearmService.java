@@ -269,7 +269,8 @@ public class FirearmService {
                         ? cryptoUtil.decrypt(application.getRejectionReasonEncrypted()) : null)
                 .revocationReason(application.getRevocationReasonEncrypted() != null
                         ? cryptoUtil.decrypt(application.getRevocationReasonEncrypted()) : null)
-                .createdAt(LocalDateTime.now().toString())
+                .createdAt(application.getCreatedAt() != null
+                        ? application.getCreatedAt().toString() : null)
                 .build();
     }
 }
