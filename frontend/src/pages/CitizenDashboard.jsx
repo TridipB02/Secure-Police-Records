@@ -373,17 +373,32 @@ function CertificatesPanel({ profile }) {
                         <StatusBadge status={c.status} />
                       </div>
                       <div className="panel-body" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                        <div className="qr-box">
-                          <img src={`data:image/png;base64,${c.qrCodeBase64}`} alt={`QR code for ${c.certificateId}`} />
-                          <LedgerTag>{c.certificateId}</LedgerTag>
-                        </div>
-                        <div className="detail-grid" style={{ flex: 1, minWidth: 160 }}>
-                          <div className="detail-item"><label>Issue date</label><div>{c.issueDate ? new Date(c.issueDate).toLocaleDateString() : '—'}</div></div>
-                          <div className="detail-item"><label>Expiry</label><div>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : '—'}</div></div>
-                        </div>
-                        <button className="btn btn-secondary btn-sm" style={{ width: '100%' }} onClick={() => downloadPdf(c.certificateId)}>
-                          Download PDF
-                        </button>
+                        {c.status === 'REVOKED' ? (
+                            <div style={{ flex: 1, minWidth: 160 }}>
+                              <div className="detail-item">
+                                <label>Revocation reason</label>
+                                <div>{c.revocationReason || 'No reason recorded'}</div>
+                              </div>
+                              <div className="detail-item" style={{ marginTop: 8 }}>
+                                <label>Revoked on</label>
+                                <div>{c.revokedAt ? new Date(c.revokedAt).toLocaleDateString() : '—'}</div>
+                              </div>
+                            </div>
+                        ) : (
+                            <>
+                              <div className="qr-box">
+                                <img src={`data:image/png;base64,${c.qrCodeBase64}`} alt={`QR code for ${c.certificateId}`} />
+                                <LedgerTag>{c.certificateId}</LedgerTag>
+                              </div>
+                              <div className="detail-grid" style={{ flex: 1, minWidth: 160 }}>
+                                <div className="detail-item"><label>Issue date</label><div>{c.issueDate ? new Date(c.issueDate).toLocaleDateString() : '—'}</div></div>
+                                <div className="detail-item"><label>Expiry</label><div>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : '—'}</div></div>
+                              </div>
+                              <button className="btn btn-secondary btn-sm" style={{ width: '100%' }} onClick={() => downloadPdf(c.certificateId)}>
+                                Download PDF
+                              </button>
+                            </>
+                        )}
                       </div>
                     </div>
                 ))}
