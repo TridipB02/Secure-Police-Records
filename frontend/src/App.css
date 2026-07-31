@@ -498,6 +498,7 @@ table.data tr:hover td { background: var(--surface); }
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
+  min-height: calc(100vh - 63px);
 }
 
 .sidebar {

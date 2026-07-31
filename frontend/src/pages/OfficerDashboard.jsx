@@ -19,7 +19,7 @@ const SECTIONS = [
 ];
 
 const KYC_SUBTABS = ['Pending', 'Verified', 'Certified'];
-const RECORDS_SUBTABS = ['Create / Update', 'History', 'All records'];
+const RECORDS_SUBTABS = ['Create', 'Update', 'History', 'All records'];
 
 export default function OfficerDashboard() {
   const [section, setSection] = useState('kyc');
@@ -66,7 +66,8 @@ export default function OfficerDashboard() {
               <button key={t} className={`tab ${recordsSubtab === t ? 'active' : ''}`} onClick={() => setRecordsSubtab(t)}>{t}</button>
             ))}
           </div>
-          {recordsSubtab === 'Create / Update' && <RecordsPanel />}
+          {recordsSubtab === 'Create' && <RecordsPanel mode="create" />}
+          {recordsSubtab === 'Update' && <RecordsPanel mode="update" />}
           {recordsSubtab === 'History' && <RecordHistoryPanel />}
           {recordsSubtab === 'All records' && <AllRecordsPanel />}
         </div>
@@ -214,7 +215,7 @@ function PendingKycPanel() {
                             <button className="btn btn-success btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'VERIFIED')}>
                               <Check size={13} /> Verify
                             </button>
-                            <button className="btn btn-secondary btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'REJECTED')}>
+                            <button className="btn btn-danger btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'REJECTED')}>
                               <X size={13} /> Reject
                             </button>
                           </div>
@@ -444,7 +445,7 @@ function CertifiedKycPanel() {
                         </td>
                         <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
                         <td>
-                          <button className="btn btn-info btn-sm" onClick={() => findAndDownload(r)}>
+                          <button className="btn btn-secondary" onClick={() => findAndDownload(r)}>
                             <Download size={13} /> Download PDF
                           </button>
                         </td>
@@ -523,7 +524,7 @@ function RegisterCitizenPanel() {
                 <label>ID proof number</label>
                 <input required value={form.idProofNumber} onChange={set('idProofNumber')} />
               </div>
-              <button className="btn btn-success" type="submit" disabled={loading}>
+              <button className="btn" type="submit" disabled={loading}>
                 {loading && <span className="spinner" />}
                 {!loading && <UserPlus size={14} />}
                 {loading ? 'Registering…' : 'Register citizen'}
@@ -553,8 +554,7 @@ function RegisterCitizenPanel() {
   );
 }
 
-function RecordsPanel() {
-  const [mode, setMode] = useState('create');
+function RecordsPanel({ mode }) {
   const [form, setForm] = useState({ citizenReferenceNumber: '', recordType: 'FIR', content: '', actionReason: '', existingRecordId: '' });
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(null);
@@ -588,9 +588,6 @@ function RecordsPanel() {
         <div className="panel">
           <div className="panel-header">
             <h2>{mode === 'create' ? 'Create record' : 'Update record'}</h2>
-            <button className="btn btn-secondary btn-sm" onClick={() => setMode(mode === 'create' ? 'update' : 'create')}>
-              Switch to {mode === 'create' ? 'update' : 'create'}
-            </button>
           </div>
           <div className="panel-body">
             <form onSubmit={submit}>
@@ -623,7 +620,7 @@ function RecordsPanel() {
                 <label>Action reason</label>
                 <input required value={form.actionReason} onChange={set('actionReason')} />
               </div>
-              <button className="btn btn-success" type="submit" disabled={loading}>
+              <button className="btn" type="submit" disabled={loading}>
                 {loading && <span className="spinner" />}
                 {!loading && <FilePlus size={14} />}
                 {loading ? 'Saving…' : mode === 'create' ? 'Create record' : 'Update record'}
