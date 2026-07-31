@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function Navbar({ title, subtitle, hideUser }) {
+export default function Navbar({ title, subtitle }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -11,21 +11,21 @@ export default function Navbar({ title, subtitle, hideUser }) {
   };
 
   return (
-    <header className="topbar">
-      <div className="topbar-brand">
-        <span className="topbar-crest">SP</span>
-        <span className="topbar-title">
+      <header className="topbar">
+        <div className="topbar-brand">
+          <span className="topbar-crest">SP</span>
+          <span className="topbar-title">
           {title || 'Secure Police Record System'}
-          {subtitle && <small>{subtitle}</small>}
+            {subtitle && <small>{subtitle}</small>}
         </span>
-      </div>
-      {user && !hideUser && (
-        <div className="topbar-user">
-          <span>{user.fullName}</span>
-          <span className="topbar-role">{user.role}</span>
-          <button className="btn-ghost-invert" onClick={handleLogout}>Sign out</button>
         </div>
-      )}
-    </header>
+        {user && (
+            <div className="topbar-user">
+              <span>{user.fullName}</span>
+              <span className="topbar-role">{user.role}</span>
+              <button className="btn-ghost-invert" onClick={handleLogout}>Sign out</button>
+            </div>
+        )}
+      </header>
   );
 }
