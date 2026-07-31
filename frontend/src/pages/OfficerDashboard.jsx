@@ -1,37 +1,98 @@
 import { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
+import DashboardLayout from '../components/DashboardLayout';
 import LedgerTag from '../components/LedgerTag';
 import StatusBadge from '../components/StatusBadge';
 import RecordCard from '../components/RecordCard';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import {
+  IdCard, Users, FileText, UserCircle,
+  Check, X, Award, Download, UserPlus, FilePlus, History as HistoryIcon,
+} from 'lucide-react';
 
-const TABS = ['Pending KYC', 'Verified KYC', 'Certified KYC', 'Register citizen', 'Police records', 'All citizens', 'All records'];
+const SECTIONS = [
+  { key: 'kyc', label: 'KYC', icon: IdCard },
+  { key: 'citizens', label: 'Citizens', icon: Users },
+  { key: 'records', label: 'Records', icon: FileText },
+  { key: 'profile', label: 'Profile', icon: UserCircle },
+];
+
+const KYC_SUBTABS = ['Pending', 'Verified', 'Certified'];
+const RECORDS_SUBTABS = ['Create / Update', 'History', 'All records'];
 
 export default function OfficerDashboard() {
-  const [tab, setTab] = useState(TABS[0]);
+  const [section, setSection] = useState('kyc');
+  const [kycSubtab, setKycSubtab] = useState(KYC_SUBTABS[0]);
+  const [citizensSubtab, setCitizensSubtab] = useState('Register');
+  const [recordsSubtab, setRecordsSubtab] = useState(RECORDS_SUBTABS[0]);
+
   return (
-      <>
-        <Navbar subtitle="Officer Console" />
-        <main className="main">
-          <div className="page-header">
-            <h1>Police officer console</h1>
-            <p>Verify citizen KYC, register new citizens, and manage police records.</p>
-          </div>
+    <DashboardLayout subtitle="Officer Console" sections={SECTIONS} active={section} onChange={setSection}>
+      <div className="page-header">
+        <h1>Police officer console</h1>
+        <p>Verify citizen KYC, register new citizens, and manage police records.</p>
+      </div>
+
+      {section === 'kyc' && (
+        <div>
           <div className="tabs">
-            {TABS.map((t) => (
-                <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>{t}</button>
+            {KYC_SUBTABS.map((t) => (
+              <button key={t} className={`tab ${kycSubtab === t ? 'active' : ''}`} onClick={() => setKycSubtab(t)}>{t}</button>
             ))}
           </div>
-          {tab === 'Pending KYC' && <PendingKycPanel />}
-          {tab === 'Verified KYC' && <VerifiedKycPanel />}
-          {tab === 'Certified KYC' && <CertifiedKycPanel />}
-          {tab === 'Register citizen' && <RegisterCitizenPanel />}
-          {tab === 'Police records' && <RecordsPanel />}
-          {tab === 'All citizens' && <AllCitizensPanel />}
-          {tab === 'All records' && <AllFirsPanel />}
-        </main>
-      </>
+          {kycSubtab === 'Pending' && <PendingKycPanel />}
+          {kycSubtab === 'Verified' && <VerifiedKycPanel />}
+          {kycSubtab === 'Certified' && <CertifiedKycPanel />}
+        </div>
+      )}
+
+      {section === 'citizens' && (
+        <div>
+          <div className="tabs">
+            {['Register', 'All citizens'].map((t) => (
+              <button key={t} className={`tab ${citizensSubtab === t ? 'active' : ''}`} onClick={() => setCitizensSubtab(t)}>{t}</button>
+            ))}
+          </div>
+          {citizensSubtab === 'Register' && <RegisterCitizenPanel />}
+          {citizensSubtab === 'All citizens' && <AllCitizensPanel />}
+        </div>
+      )}
+
+      {section === 'records' && (
+        <div>
+          <div className="tabs">
+            {RECORDS_SUBTABS.map((t) => (
+              <button key={t} className={`tab ${recordsSubtab === t ? 'active' : ''}`} onClick={() => setRecordsSubtab(t)}>{t}</button>
+            ))}
+          </div>
+          {recordsSubtab === 'Create / Update' && <RecordsPanel />}
+          {recordsSubtab === 'History' && <RecordHistoryPanel />}
+          {recordsSubtab === 'All records' && <AllRecordsPanel />}
+        </div>
+      )}
+
+      {section === 'profile' && <ProfilePanel />}
+    </DashboardLayout>
+  );
+}
+
+function ProfilePanel() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+    <div className="panel">
+      <div className="panel-header"><h2>My profile</h2></div>
+      <div className="panel-body">
+        <div className="detail-grid">
+          <div className="detail-item"><label>Full name</label><div>{user.fullName}</div></div>
+          <div className="detail-item"><label>Username</label><div>{user.username}</div></div>
+          <div className="detail-item"><label>Role</label><div><StatusBadge status={user.role} /></div></div>
+          {user.badgeNumber && <div className="detail-item"><label>Badge number</label><div>{user.badgeNumber}</div></div>}
+          {user.stationCode && <div className="detail-item"><label>Station code</label><div>{user.stationCode}</div></div>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -59,20 +120,20 @@ function PendingKycPanel() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   const displayedRequests = requests
-    .filter((r) => {
-      if (!searchText.trim()) return true;
-      const q = searchText.trim().toLowerCase();
-      return (
-        (r.citizenName || '').toLowerCase().includes(q) ||
-        (r.citizenReference || '').toLowerCase().includes(q) ||
-        (r.requestNumber || '').toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.submittedAt || 0).getTime();
-      const dateB = new Date(b.submittedAt || 0).getTime();
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+      .filter((r) => {
+        if (!searchText.trim()) return true;
+        const q = searchText.trim().toLowerCase();
+        return (
+            (r.citizenName || '').toLowerCase().includes(q) ||
+            (r.citizenReference || '').toLowerCase().includes(q) ||
+            (r.requestNumber || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.submittedAt || 0).getTime();
+        const dateB = new Date(b.submittedAt || 0).getTime();
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
 
   const decide = async (requestNumber, status) => {
     setBusyId(requestNumber);
@@ -91,33 +152,21 @@ function PendingKycPanel() {
     }
   };
 
-  const genCertificate = async (requestNumber) => {
-    setBusyId(requestNumber);
-    try {
-      await api.post(`/api/certificates/kyc/${requestNumber}`);
-      toast.success('Certificate generated', requestNumber);
-    } catch (err) {
-      toast.error('Certificate generation failed', apiErrorMessage(err));
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   return (
       <div className="panel">
         <div className="panel-header">
           <h2>Pending KYC requests</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
-              placeholder="Search citizen or request…"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+                placeholder="Search citizen or request…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
             />
             <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
@@ -162,8 +211,12 @@ function PendingKycPanel() {
                         </td>
                         <td>
                           <div className="btn-row" style={{ marginTop: 0 }}>
-                            <button className="btn btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'VERIFIED')}>Verify</button>
-                            <button className="btn btn-secondary btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'REJECTED')}>Reject</button>
+                            <button className="btn btn-success btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'VERIFIED')}>
+                              <Check size={13} /> Verify
+                            </button>
+                            <button className="btn btn-secondary btn-sm" disabled={busyId === r.requestNumber} onClick={() => decide(r.requestNumber, 'REJECTED')}>
+                              <X size={13} /> Reject
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -181,7 +234,6 @@ function VerifiedKycPanel() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
-  const [certificates, setCertificates] = useState({});
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchText, setSearchText] = useState('');
   const toast = useToast();
@@ -201,21 +253,21 @@ function VerifiedKycPanel() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   const displayedRequests = requests
-    .filter((r) => !r.hasCertificate)
-    .filter((r) => {
-      if (!searchText.trim()) return true;
-      const q = searchText.trim().toLowerCase();
-      return (
-        (r.citizenName || '').toLowerCase().includes(q) ||
-        (r.citizenReference || '').toLowerCase().includes(q) ||
-        (r.requestNumber || '').toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.verifiedAt || 0).getTime();
-      const dateB = new Date(b.verifiedAt || 0).getTime();
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+      .filter((r) => !r.hasCertificate)
+      .filter((r) => {
+        if (!searchText.trim()) return true;
+        const q = searchText.trim().toLowerCase();
+        return (
+            (r.citizenName || '').toLowerCase().includes(q) ||
+            (r.citizenReference || '').toLowerCase().includes(q) ||
+            (r.requestNumber || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.verifiedAt || 0).getTime();
+        const dateB = new Date(b.verifiedAt || 0).getTime();
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
 
   const genCertificate = async (requestNumber) => {
     setBusyId(requestNumber);
@@ -231,36 +283,21 @@ function VerifiedKycPanel() {
     }
   };
 
-  const downloadPdf = async (certificateId) => {
-    try {
-      const res = await api.get(`/api/certificates/${certificateId}/pdf`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${certificateId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      toast.error('Download failed', apiErrorMessage(err));
-    }
-  };
-
   return (
       <div className="panel">
         <div className="panel-header">
           <h2>Verified KYC requests</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
-              placeholder="Search citizen or request…"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+                placeholder="Search citizen or request…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
             />
             <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
@@ -276,26 +313,26 @@ function VerifiedKycPanel() {
               <div style={{ overflowX: 'auto' }}>
                 <table className="data">
                   <thead>
-                    <tr><th>Request</th><th>Citizen</th><th>Verified</th><th>Actions</th></tr>
+                  <tr><th>Request</th><th>Citizen</th><th>Verified</th><th>Actions</th></tr>
                   </thead>
                   <tbody>
-                    {displayedRequests.map((r) => (
-                        <tr key={r.requestNumber}>
-                          <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
-                          <td>
-                            <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
-                            <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
-                          </td>
-                          <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
-                          <td>
-                            <div className="btn-row" style={{ marginTop: 0 }}>
-                              <button className="btn btn-sm" disabled={busyId === r.requestNumber} onClick={() => genCertificate(r.requestNumber)}>
-                                Generate certificate
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                    ))}
+                  {displayedRequests.map((r) => (
+                      <tr key={r.requestNumber}>
+                        <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
+                        <td>
+                          <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                          <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
+                        </td>
+                        <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
+                        <td>
+                          <div className="btn-row" style={{ marginTop: 0 }}>
+                            <button className="btn btn-info btn-sm" disabled={busyId === r.requestNumber} onClick={() => genCertificate(r.requestNumber)}>
+                              <Award size={13} /> Generate certificate
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                  ))}
                   </tbody>
                 </table>
               </div>
@@ -308,7 +345,6 @@ function VerifiedKycPanel() {
 function CertifiedKycPanel() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [certIds, setCertIds] = useState({});
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchText, setSearchText] = useState('');
   const toast = useToast();
@@ -329,20 +365,20 @@ function CertifiedKycPanel() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   const displayedRequests = requests
-    .filter((r) => {
-      if (!searchText.trim()) return true;
-      const q = searchText.trim().toLowerCase();
-      return (
-        (r.citizenName || '').toLowerCase().includes(q) ||
-        (r.citizenReference || '').toLowerCase().includes(q) ||
-        (r.requestNumber || '').toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.verifiedAt || 0).getTime();
-      const dateB = new Date(b.verifiedAt || 0).getTime();
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+      .filter((r) => {
+        if (!searchText.trim()) return true;
+        const q = searchText.trim().toLowerCase();
+        return (
+            (r.citizenName || '').toLowerCase().includes(q) ||
+            (r.citizenReference || '').toLowerCase().includes(q) ||
+            (r.requestNumber || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.verifiedAt || 0).getTime();
+        const dateB = new Date(b.verifiedAt || 0).getTime();
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
 
   const findAndDownload = async (r) => {
     try {
@@ -372,15 +408,15 @@ function CertifiedKycPanel() {
           <h2>Certified KYC requests</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
-              placeholder="Search citizen or request…"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+                placeholder="Search citizen or request…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
             />
             <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
@@ -396,24 +432,24 @@ function CertifiedKycPanel() {
               <div style={{ overflowX: 'auto' }}>
                 <table className="data">
                   <thead>
-                    <tr><th>Request</th><th>Citizen</th><th>Verified</th><th></th></tr>
+                  <tr><th>Request</th><th>Citizen</th><th>Verified</th><th></th></tr>
                   </thead>
                   <tbody>
-                    {displayedRequests.map((r) => (
-                        <tr key={r.requestNumber}>
-                          <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
-                          <td>
-                            <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
-                            <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
-                          </td>
-                          <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
-                          <td>
-                            <button className="btn btn-secondary btn-sm" onClick={() => findAndDownload(r)}>
-                              Download PDF
-                            </button>
-                          </td>
-                        </tr>
-                    ))}
+                  {displayedRequests.map((r) => (
+                      <tr key={r.requestNumber}>
+                        <td><LedgerTag>{r.requestNumber}</LedgerTag></td>
+                        <td>
+                          <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                          <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>
+                        </td>
+                        <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
+                        <td>
+                          <button className="btn btn-info btn-sm" onClick={() => findAndDownload(r)}>
+                            <Download size={13} /> Download PDF
+                          </button>
+                        </td>
+                      </tr>
+                  ))}
                   </tbody>
                 </table>
               </div>
@@ -487,8 +523,9 @@ function RegisterCitizenPanel() {
                 <label>ID proof number</label>
                 <input required value={form.idProofNumber} onChange={set('idProofNumber')} />
               </div>
-              <button className="btn" type="submit" disabled={loading}>
+              <button className="btn btn-success" type="submit" disabled={loading}>
                 {loading && <span className="spinner" />}
+                {!loading && <UserPlus size={14} />}
                 {loading ? 'Registering…' : 'Register citizen'}
               </button>
             </form>
@@ -521,11 +558,6 @@ function RecordsPanel() {
   const [form, setForm] = useState({ citizenReferenceNumber: '', recordType: 'FIR', content: '', actionReason: '', existingRecordId: '' });
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(null);
-  const [historyId, setHistoryId] = useState('');
-  const [history, setHistory] = useState(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [latestOnly, setLatestOnly] = useState(null);
-  const [latestLoading, setLatestLoading] = useState(false);
   const toast = useToast();
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -550,6 +582,75 @@ function RecordsPanel() {
       setLoading(false);
     }
   };
+
+  return (
+      <div className="grid-2">
+        <div className="panel">
+          <div className="panel-header">
+            <h2>{mode === 'create' ? 'Create record' : 'Update record'}</h2>
+            <button className="btn btn-secondary btn-sm" onClick={() => setMode(mode === 'create' ? 'update' : 'create')}>
+              Switch to {mode === 'create' ? 'update' : 'create'}
+            </button>
+          </div>
+          <div className="panel-body">
+            <form onSubmit={submit}>
+              {mode === 'create' && (
+                  <div className="field">
+                    <label>Citizen reference number</label>
+                    <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-20260702115022-E67DD2" />
+                  </div>
+              )}
+              {mode === 'update' && (
+                  <div className="field">
+                    <label>Existing record ID</label>
+                    <input required value={form.existingRecordId} onChange={set('existingRecordId')} placeholder="REC-20260705120859-F95EF4" />
+                  </div>
+              )}
+              <div className="field">
+                <label>Record type</label>
+                <select value={form.recordType} onChange={set('recordType')}>
+                  <option value="FIR">FIR</option>
+                  <option value="CHARGESHEET">Chargesheet</option>
+                  <option value="ARREST_MEMO">Arrest memo</option>
+                  <option value="CASE_DIARY">Case diary</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Content</label>
+                <textarea required rows={4} value={form.content} onChange={set('content')} />
+              </div>
+              <div className="field">
+                <label>Action reason</label>
+                <input required value={form.actionReason} onChange={set('actionReason')} />
+              </div>
+              <button className="btn btn-success" type="submit" disabled={loading}>
+                {loading && <span className="spinner" />}
+                {!loading && <FilePlus size={14} />}
+                {loading ? 'Saving…' : mode === 'create' ? 'Create record' : 'Update record'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-header"><h2>Latest saved record</h2></div>
+          <div className="panel-body">
+            {!created ? (
+                <p style={{ color: 'var(--ink-soft)', fontSize: 13 }}>Create or update a record to see its details and hash here.</p>
+            ) : <RecordCard record={created} />}
+          </div>
+        </div>
+      </div>
+  );
+}
+
+function RecordHistoryPanel() {
+  const [historyId, setHistoryId] = useState('');
+  const [history, setHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [latestOnly, setLatestOnly] = useState(null);
+  const [latestLoading, setLatestLoading] = useState(false);
+  const toast = useToast();
 
   const viewHistory = async (e) => {
     e.preventDefault();
@@ -583,83 +684,25 @@ function RecordsPanel() {
   };
 
   return (
-      <div>
-        <div className="grid-2" style={{ marginBottom: 18 }}>
-          <div className="panel">
-            <div className="panel-header">
-              <h2>{mode === 'create' ? 'Create record' : 'Update record'}</h2>
-              <button className="btn btn-secondary btn-sm" onClick={() => setMode(mode === 'create' ? 'update' : 'create')}>
-                Switch to {mode === 'create' ? 'update' : 'create'}
-              </button>
+      <div className="panel">
+        <div className="panel-header"><h2>Record history</h2></div>
+        <div className="panel-body">
+          <form onSubmit={viewHistory} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
+            <div className="field" style={{ marginBottom: 0, minWidth: 260, flex: 1 }}>
+              <label>Record ID</label>
+              <input value={historyId} onChange={(e) => setHistoryId(e.target.value)} placeholder="REC-20260705120859-F95EF4" />
             </div>
-            <div className="panel-body">
-              <form onSubmit={submit}>
-                {mode === 'create' && (
-                    <div className="field">
-                      <label>Citizen reference number</label>
-                      <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-20260702115022-E67DD2" />
-                    </div>
-                )}
-                {mode === 'update' && (
-                    <div className="field">
-                      <label>Existing record ID</label>
-                      <input required value={form.existingRecordId} onChange={set('existingRecordId')} placeholder="REC-20260705120859-F95EF4" />
-                    </div>
-                )}
-                <div className="field">
-                  <label>Record type</label>
-                  <select value={form.recordType} onChange={set('recordType')}>
-                    <option value="FIR">FIR</option>
-                    <option value="CHARGESHEET">Chargesheet</option>
-                    <option value="ARREST_MEMO">Arrest memo</option>
-                    <option value="CASE_DIARY">Case diary</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Content</label>
-                  <textarea required rows={4} value={form.content} onChange={set('content')} />
-                </div>
-                <div className="field">
-                  <label>Action reason</label>
-                  <input required value={form.actionReason} onChange={set('actionReason')} />
-                </div>
-                <button className="btn" type="submit" disabled={loading}>
-                  {loading && <span className="spinner" />}
-                  {loading ? 'Saving…' : mode === 'create' ? 'Create record' : 'Update record'}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-header"><h2>Latest saved record</h2></div>
-            <div className="panel-body">
-              {!created ? (
-                  <p style={{ color: 'var(--ink-soft)', fontSize: 13 }}>Create or update a record to see its details and hash here.</p>
-              ) : <RecordCard record={created} />}
-            </div>
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-header"><h2>Record history</h2></div>
-          <div className="panel-body">
-            <form onSubmit={viewHistory} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
-              <div className="field" style={{ marginBottom: 0, minWidth: 260, flex: 1 }}>
-                <label>Record ID</label>
-                <input value={historyId} onChange={(e) => setHistoryId(e.target.value)} placeholder="REC-20260705120859-F95EF4" />
-              </div>
-              <button className="btn" type="submit" disabled={historyLoading}>
-                {historyLoading ? 'Loading…' : 'View full history'}
-              </button>
-              <button type="button" className="btn btn-secondary" disabled={latestLoading} onClick={viewLatest}>
-                {latestLoading ? 'Loading…' : 'Latest version only'}
-              </button>
-            </form>
-            {latestOnly && <RecordCard record={latestOnly} />}
-            {history && history.length === 0 && <div className="empty-row">No versions found.</div>}
-            {history && history.map((rec) => <RecordCard key={rec.id || rec.recordId + rec.version} record={rec} />)}
-          </div>
+            <button className="btn btn-info" type="submit" disabled={historyLoading}>
+              <HistoryIcon size={14} />
+              {historyLoading ? 'Loading…' : 'View full history'}
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={latestLoading} onClick={viewLatest}>
+              {latestLoading ? 'Loading…' : 'Latest version only'}
+            </button>
+          </form>
+          {latestOnly && <RecordCard record={latestOnly} />}
+          {history && history.length === 0 && <div className="empty-row">No versions found.</div>}
+          {history && history.map((rec) => <RecordCard key={rec.id || rec.recordId + rec.version} record={rec} />)}
         </div>
       </div>
   );
@@ -794,7 +837,7 @@ function AllCitizensPanel() {
   );
 }
 
-function AllFirsPanel() {
+function AllRecordsPanel() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('newest');
@@ -816,73 +859,73 @@ function AllFirsPanel() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
   const displayedRecords = records
-    .filter((r) => {
-      if (!searchText.trim()) return true;
-      const q = searchText.trim().toLowerCase();
-      return (
-        (r.citizenName || '').toLowerCase().includes(q) ||
-        (r.citizenReference || '').toLowerCase().includes(q) ||
-        (r.recordId || '').toLowerCase().includes(q) ||
-        (r.recordType || '').toLowerCase().includes(q) ||
-        (r.officerName || '').toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+      .filter((r) => {
+        if (!searchText.trim()) return true;
+        const q = searchText.trim().toLowerCase();
+        return (
+            (r.citizenName || '').toLowerCase().includes(q) ||
+            (r.citizenReference || '').toLowerCase().includes(q) ||
+            (r.recordId || '').toLowerCase().includes(q) ||
+            (r.recordType || '').toLowerCase().includes(q) ||
+            (r.officerName || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <h2>All FIRs / police records</h2>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input
-            placeholder="Search citizen, record, officer…"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
-          />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
-          >
-            Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
-          </button>
-          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+      <div className="panel">
+        <div className="panel-header">
+          <h2>All records</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+                placeholder="Search citizen, record, officer…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
+            />
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+            >
+              Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          </div>
+        </div>
+        <div className="panel-body" style={{ padding: 0 }}>
+          {loading ? (
+              <div style={{ padding: 18 }}><span className="spinner dark" /></div>
+          ) : displayedRecords.length === 0 ? (
+              <div className="empty-row">No records found.</div>
+          ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data">
+                  <thead>
+                  <tr><th>Record</th><th>Type</th><th>Citizen</th><th>Officer</th><th>Recorded</th></tr>
+                  </thead>
+                  <tbody>
+                  {displayedRecords.map((r) => (
+                      <tr key={r.id}>
+                        <td><LedgerTag>{r.recordId}</LedgerTag></td>
+                        <td>{r.recordType}</td>
+                        <td>
+                          <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
+                          {r.citizenReference && <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>}
+                        </td>
+                        <td>{r.officerName}</td>
+                        <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</td>
+                      </tr>
+                  ))}
+                  </tbody>
+                </table>
+              </div>
+          )}
         </div>
       </div>
-      <div className="panel-body" style={{ padding: 0 }}>
-        {loading ? (
-          <div style={{ padding: 18 }}><span className="spinner dark" /></div>
-        ) : displayedRecords.length === 0 ? (
-          <div className="empty-row">No records found.</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data">
-              <thead>
-                <tr><th>Record</th><th>Type</th><th>Citizen</th><th>Officer</th><th>Recorded</th></tr>
-              </thead>
-              <tbody>
-                {displayedRecords.map((r) => (
-                  <tr key={r.id}>
-                    <td><LedgerTag>{r.recordId}</LedgerTag></td>
-                    <td>{r.recordType}</td>
-                    <td>
-                      <div style={{ fontWeight: 500, marginBottom: 2 }}>{r.citizenName || '—'}</div>
-                      {r.citizenReference && <LedgerTag truncate={22}>{r.citizenReference}</LedgerTag>}
-                    </td>
-                    <td>{r.officerName}</td>
-                    <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
