@@ -8,70 +8,76 @@ import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import {
   IdCard, Users, FileText, UserCircle,
-  Check, X, Award, Download, UserPlus, FilePlus, History as HistoryIcon,
+  Check, X, Award, Download,
+  Clock, BadgeCheck, FileCheck2,
+  UserPlus, List,
+  FilePlus, FileEdit, History as HistoryIcon, Files,
 } from 'lucide-react';
 
 const SECTIONS = [
-  { key: 'kyc', label: 'KYC', icon: IdCard },
-  { key: 'citizens', label: 'Citizens', icon: Users },
-  { key: 'records', label: 'Records', icon: FileText },
+  {
+    key: 'kyc', label: 'KYC', icon: IdCard,
+    subsections: [
+      { key: 'pending', label: 'Pending', icon: Clock },
+      { key: 'verified', label: 'Verified', icon: BadgeCheck },
+      { key: 'certified', label: 'Certified', icon: FileCheck2 },
+    ],
+  },
+  {
+    key: 'citizens', label: 'Citizens', icon: Users,
+    subsections: [
+      { key: 'register', label: 'Register', icon: UserPlus },
+      { key: 'all', label: 'All citizens', icon: List },
+    ],
+  },
+  {
+    key: 'records', label: 'Records', icon: FileText,
+    subsections: [
+      { key: 'create', label: 'Create', icon: FilePlus },
+      { key: 'update', label: 'Update', icon: FileEdit },
+      { key: 'history', label: 'History', icon: HistoryIcon },
+      { key: 'all', label: 'All records', icon: Files },
+    ],
+  },
   { key: 'profile', label: 'Profile', icon: UserCircle },
 ];
 
-const KYC_SUBTABS = ['Pending', 'Verified', 'Certified'];
-const RECORDS_SUBTABS = ['Create', 'Update', 'History', 'All records'];
-
 export default function OfficerDashboard() {
   const [section, setSection] = useState('kyc');
-  const [kycSubtab, setKycSubtab] = useState(KYC_SUBTABS[0]);
-  const [citizensSubtab, setCitizensSubtab] = useState('Register');
-  const [recordsSubtab, setRecordsSubtab] = useState(RECORDS_SUBTABS[0]);
+  const [sub, setSub] = useState('pending');
+
+  const changeSection = (key) => {
+    setSection(key);
+    const found = SECTIONS.find((s) => s.key === key);
+    if (found?.subsections) setSub(found.subsections[0].key);
+    else setSub(null);
+  };
 
   return (
-    <DashboardLayout subtitle="Officer Console" sections={SECTIONS} active={section} onChange={setSection}>
+    <DashboardLayout
+      subtitle="Officer Console"
+      sections={SECTIONS}
+      active={section}
+      activeSub={sub}
+      onChange={changeSection}
+      onChangeSub={setSub}
+    >
       <div className="page-header">
         <h1>Police officer console</h1>
         <p>Verify citizen KYC, register new citizens, and manage police records.</p>
       </div>
 
-      {section === 'kyc' && (
-        <div>
-          <div className="tabs">
-            {KYC_SUBTABS.map((t) => (
-              <button key={t} className={`tab ${kycSubtab === t ? 'active' : ''}`} onClick={() => setKycSubtab(t)}>{t}</button>
-            ))}
-          </div>
-          {kycSubtab === 'Pending' && <PendingKycPanel />}
-          {kycSubtab === 'Verified' && <VerifiedKycPanel />}
-          {kycSubtab === 'Certified' && <CertifiedKycPanel />}
-        </div>
-      )}
+      {section === 'kyc' && sub === 'pending' && <PendingKycPanel />}
+      {section === 'kyc' && sub === 'verified' && <VerifiedKycPanel />}
+      {section === 'kyc' && sub === 'certified' && <CertifiedKycPanel />}
 
-      {section === 'citizens' && (
-        <div>
-          <div className="tabs">
-            {['Register', 'All citizens'].map((t) => (
-              <button key={t} className={`tab ${citizensSubtab === t ? 'active' : ''}`} onClick={() => setCitizensSubtab(t)}>{t}</button>
-            ))}
-          </div>
-          {citizensSubtab === 'Register' && <RegisterCitizenPanel />}
-          {citizensSubtab === 'All citizens' && <AllCitizensPanel />}
-        </div>
-      )}
+      {section === 'citizens' && sub === 'register' && <RegisterCitizenPanel />}
+      {section === 'citizens' && sub === 'all' && <AllCitizensPanel />}
 
-      {section === 'records' && (
-        <div>
-          <div className="tabs">
-            {RECORDS_SUBTABS.map((t) => (
-              <button key={t} className={`tab ${recordsSubtab === t ? 'active' : ''}`} onClick={() => setRecordsSubtab(t)}>{t}</button>
-            ))}
-          </div>
-          {recordsSubtab === 'Create' && <RecordsPanel mode="create" />}
-          {recordsSubtab === 'Update' && <RecordsPanel mode="update" />}
-          {recordsSubtab === 'History' && <RecordHistoryPanel />}
-          {recordsSubtab === 'All records' && <AllRecordsPanel />}
-        </div>
-      )}
+      {section === 'records' && sub === 'create' && <RecordsPanel mode="create" />}
+      {section === 'records' && sub === 'update' && <RecordsPanel mode="update" />}
+      {section === 'records' && sub === 'history' && <RecordHistoryPanel />}
+      {section === 'records' && sub === 'all' && <AllRecordsPanel />}
 
       {section === 'profile' && <ProfilePanel />}
     </DashboardLayout>
@@ -445,7 +451,7 @@ function CertifiedKycPanel() {
                         </td>
                         <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
                         <td>
-                          <button className="btn btn-secondary" onClick={() => findAndDownload(r)}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => findAndDownload(r)}>
                             <Download size={13} /> Download PDF
                           </button>
                         </td>
@@ -689,7 +695,7 @@ function RecordHistoryPanel() {
               <label>Record ID</label>
               <input value={historyId} onChange={(e) => setHistoryId(e.target.value)} placeholder="REC-20260705120859-F95EF4" />
             </div>
-            <button className="btn btn-info" type="submit" disabled={historyLoading}>
+            <button className="btn btn-secondary" type="submit" disabled={historyLoading}>
               <HistoryIcon size={14} />
               {historyLoading ? 'Loading…' : 'View full history'}
             </button>
