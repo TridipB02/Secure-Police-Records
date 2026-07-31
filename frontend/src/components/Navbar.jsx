@@ -1,14 +1,7 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 export default function Navbar({ title, subtitle }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const { user } = useAuth();
 
   return (
       <header className="topbar">
@@ -21,9 +14,10 @@ export default function Navbar({ title, subtitle }) {
         </div>
         {user && (
             <div className="topbar-user">
-              <span>{user.fullName}</span>
-              <span className="topbar-role">{user.role}</span>
-              <button className="btn-ghost-invert" onClick={handleLogout}>Sign out</button>
+              <div className="topbar-user-info">
+                <span className="topbar-user-name">{user.fullName}</span>
+                <span className="topbar-role">{user.role}</span>
+              </div>
             </div>
         )}
       </header>

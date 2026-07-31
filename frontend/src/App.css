@@ -50,8 +50,18 @@
 .topbar-user {
   display: flex;
   align-items: center;
-  gap: 14px;
+}
+
+.topbar-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.topbar-user-name {
   font-size: 13px;
+  font-weight: 500;
 }
 
 .topbar-role {
@@ -495,9 +505,6 @@ table.data tr:hover td { background: var(--surface); }
   display: flex;
   flex: 1;
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  align-items: flex-start;
 }
 
 .sidebar {
@@ -508,11 +515,16 @@ table.data tr:hover td { background: var(--surface); }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: sticky;
-  top: 63px; /* navbar height */
+  position: fixed;
+  left: 0;
+  top: 63px;
   height: calc(100vh - 63px);
-  align-self: flex-start;
   overflow-y: auto;
+  z-index: 10;
+}
+
+.dashboard-content {
+  margin-left: 200px;
 }
 
 .sidebar-nav {
@@ -646,7 +658,10 @@ table.data tr:hover td { background: var(--surface); }
     height: auto;
     padding: 10px;
   }
-  .dashboard-content { padding: 20px 16px 48px; }
+  .dashboard-content {
+    margin-left: 0;
+    padding: 20px 16px 48px;
+  }
 }
 /* ---------- Sidebar: nested sub-items + footer ---------- */
 .sidebar {
