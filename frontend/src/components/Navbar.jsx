@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function Navbar({ title, subtitle }) {
+export default function Navbar({ title, subtitle, hideUser }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +19,7 @@ export default function Navbar({ title, subtitle }) {
           {subtitle && <small>{subtitle}</small>}
         </span>
       </div>
-      {user && (
+      {user && !hideUser && (
         <div className="topbar-user">
           <span>{user.fullName}</span>
           <span className="topbar-role">{user.role}</span>
