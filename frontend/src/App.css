@@ -491,15 +491,13 @@ table.data tr:hover td { background: var(--surface); }
 }
 .btn-info:hover { background: #1739ad; }
 
-/* ---------- Dashboard shell with sidebar ---------- */
-/* ---------- Dashboard shell with sidebar ---------- */
 .dashboard-shell {
   display: flex;
   flex: 1;
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
-  min-height: calc(100vh - 63px);
+  align-items: flex-start;
 }
 
 .sidebar {
@@ -510,6 +508,11 @@ table.data tr:hover td { background: var(--surface); }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: sticky;
+  top: 63px; /* navbar height */
+  height: calc(100vh - 63px);
+  align-self: flex-start;
+  overflow-y: auto;
 }
 
 .sidebar-nav {
@@ -638,6 +641,9 @@ table.data tr:hover td { background: var(--surface); }
     width: 100%;
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: visible;
+    position: static;
+    height: auto;
     padding: 10px;
   }
   .dashboard-content { padding: 20px 16px 48px; }
