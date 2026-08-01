@@ -1,61 +1,116 @@
 import { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
+import DashboardLayout from '../components/DashboardLayout';
 import LedgerTag from '../components/LedgerTag';
 import StatusBadge from '../components/StatusBadge';
+import RecordCard from '../components/RecordCard';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
-import RecordCard from '../components/RecordCard';
+import { useAuth } from '../context/AuthContext';
+import MyProfilePanel from '../components/MyProfilePanel';
+import {
+  ShieldAlert, FileText, Users, UserCircle,
+  Clock, FilePlus, FileClock,
+  Search as SearchIcon, List,
+  RefreshCw, Eye,
+} from 'lucide-react';
 
-const TABS = ['Pending checks', 'Submit report', 'My reports', 'Search by citizen', 'All citizens'];
+const SECTIONS = [
+  {
+    key: 'checks', label: 'Pending checks', icon: ShieldAlert,
+  },
+  {
+    key: 'reports', label: 'Reports', icon: FileText,
+    subsections: [
+      { key: 'submit', label: 'Submit report', icon: FilePlus },
+      { key: 'my-reports', label: 'My reports', icon: FileClock },
+    ],
+  },
+  {
+    key: 'citizens', label: 'Citizens', icon: Users,
+    subsections: [
+      { key: 'search', label: 'Search by citizen', icon: SearchIcon },
+      { key: 'all', label: 'All citizens', icon: List },
+    ],
+  },
+];
 
 export default function AntecedentDashboard() {
-  const [tab, setTab] = useState(TABS[0]);
+  const [section, setSection] = useState('checks');
+  const [sub, setSub] = useState(null);
   const [prefillRef, setPrefillRef] = useState('');
-  const [editReport, setEditReport] = useState(null); // report being edited, or null
+  const [editReport, setEditReport] = useState(null);
+
+  const changeSection = (key) => {
+    setSection(key);
+    const found = SECTIONS.find((s) => s.key === key);
+    if (found?.subsections) setSub(found.subsections[0].key);
+    else setSub(null);
+    if (key !== 'reports') setEditReport(null);
+  };
 
   const goToSubmit = (refNumber) => {
     setEditReport(null);
     setPrefillRef(refNumber);
-    setTab('Submit report');
+    setSection('reports');
+    setSub('submit');
   };
 
   const goToEdit = (report) => {
     setEditReport(report);
-    setTab('Submit report');
+    setSection('reports');
+    setSub('submit');
   };
 
   return (
-      <>
-        <Navbar subtitle="Antecedent Verification" />
-        <main className="main">
-          <div className="page-header">
-            <h1>Antecedent officer console</h1>
-            <p>Submit criminal background reports and review prior submissions.</p>
+      <DashboardLayout
+          subtitle="Antecedent Verification"
+          sections={SECTIONS}
+          active={section}
+          activeSub={sub}
+          onChange={changeSection}
+          onChangeSub={setSub}
+      >
+        <div className="page-header">
+          <h1>Antecedent officer console</h1>
+          <p>Submit criminal background reports and review prior submissions.</p>
+        </div>
+
+        {section === 'checks' && <PendingChecksPanel onGoToSubmit={goToSubmit} />}
+
+        {section === 'reports' && sub === 'submit' && (
+            <SubmitPanel
+                prefillRef={prefillRef}
+                editReport={editReport}
+                onDoneEditing={() => setEditReport(null)}
+            />
+        )}
+        {section === 'reports' && sub === 'my-reports' && <MyReportsPanel onEdit={goToEdit} />}
+
+        {section === 'citizens' && sub === 'search' && <SearchByCitizenPanel onEdit={goToEdit} />}
+        {section === 'citizens' && sub === 'all' && <AllCitizensPanel />}
+
+        {section === 'profile' && <MyProfilePanel />}
+      </DashboardLayout>
+  );
+}
+
+function ProfilePanel() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+      <div className="panel">
+        <div className="panel-header"><h2>My profile</h2></div>
+        <div className="panel-body">
+          <div className="detail-grid">
+            <div className="detail-item"><label>Full name</label><div>{user.fullName || '—'}</div></div>
+            <div className="detail-item"><label>Username</label><div>{user.username || '—'}</div></div>
+            <div className="detail-item"><label>Email</label><div>{user.email || '—'}</div></div>
+            <div className="detail-item"><label>Role</label><div><StatusBadge status={user.role} /></div></div>
+            <div className="detail-item"><label>Badge number</label><div>{user.badgeNumber || '—'}</div></div>
+            <div className="detail-item"><label>Station code</label><div>{user.stationCode || '—'}</div></div>
           </div>
-          <div className="tabs">
-            {TABS.map((t) => (
-                <button
-                    key={t}
-                    className={`tab ${tab === t ? 'active' : ''}`}
-                    onClick={() => { if (t !== 'Submit report') setEditReport(null); setTab(t); }}
-                >
-                  {t}
-                </button>
-            ))}
-          </div>
-          {tab === 'Pending checks' && <PendingChecksPanel onGoToSubmit={goToSubmit} />}
-          {tab === 'Submit report' && (
-              <SubmitPanel
-                  prefillRef={prefillRef}
-                  editReport={editReport}
-                  onDoneEditing={() => setEditReport(null)}
-              />
-          )}
-          {tab === 'My reports' && <MyReportsPanel onEdit={goToEdit} />}
-          {tab === 'Search by citizen' && <SearchByCitizenPanel onEdit={goToEdit} />}
-          {tab === 'All citizens' && <AllCitizensPanel />}
-        </main>
-      </>
+        </div>
+      </div>
   );
 }
 
@@ -82,7 +137,9 @@ function PendingChecksPanel({ onGoToSubmit }) {
       <div className="panel">
         <div className="panel-header">
           <h2>Pending antecedent checks</h2>
-          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+            <RefreshCw size={14} />
+          </button>
         </div>
         <div className="panel-body" style={{ padding: 0 }}>
           {loading ? (
@@ -226,7 +283,7 @@ function SubmitPanel({ prefillRef, editReport, onDoneEditing }) {
                       disabled={isEditing}
                       value={form.citizenReferenceNumber}
                       onChange={set('citizenReferenceNumber')}
-                      placeholder="CIT-20260702115022-E67DD2"
+                      placeholder="CIT-*****"
                       style={{ flex: 1 }}
                   />
                   <button type="button" className="btn btn-secondary btn-sm" disabled={recordsLoading} onClick={lookupRecords}>
@@ -295,7 +352,6 @@ function SubmitPanel({ prefillRef, editReport, onDoneEditing }) {
   );
 }
 
-// Detailed report card — full FIR history + all fields, used in My Reports / Search by Citizen / Submit result
 function AntecedentReportCard({ report }) {
   return (
       <div className="detail-grid">
@@ -364,12 +420,15 @@ function MyReportsPanel({ onEdit }) {
           <div className="panel-header">
             <h2>My submitted reports</h2>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <input
-                  placeholder="Search citizen or report…"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-              />
+              <div className="search-input-wrap">
+                <SearchIcon size={13} className="search-input-icon" />
+                <input
+                    placeholder="Citizen name"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+                />
+              </div>
               <button
                   type="button"
                   className="btn btn-secondary btn-sm"
@@ -377,7 +436,9 @@ function MyReportsPanel({ onEdit }) {
               >
                 Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+              <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+                <RefreshCw size={14} />
+              </button>
             </div>
           </div>
           <div className="panel-body" style={{ padding: 0 }}>
@@ -403,8 +464,8 @@ function MyReportsPanel({ onEdit }) {
                           <td>{r.pendingCases}</td>
                           <td>{r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}</td>
                           <td>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setSelected(r)}>
-                              View
+                            <button className="btn btn-dark btn-sm btn-icon" onClick={() => setSelected(r)} title="View" aria-label="View">
+                              <Eye size={14} />
                             </button>
                           </td>
                         </tr>
@@ -466,7 +527,7 @@ function SearchByCitizenPanel({ onEdit }) {
             <form onSubmit={search} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
               <div className="field" style={{ marginBottom: 0, minWidth: 260, flex: 1 }}>
                 <label>Citizen ID / reference</label>
-                <input value={citizenId} onChange={(e) => setCitizenId(e.target.value)} placeholder="CIT-20260702115022-E67DD2" />
+                <input value={citizenId} onChange={(e) => setCitizenId(e.target.value)} placeholder="CIT-*****" />
               </div>
               <button className="btn" type="submit" disabled={loading}>
                 {loading ? 'Searching…' : 'Search'}
@@ -490,8 +551,8 @@ function SearchByCitizenPanel({ onEdit }) {
                         <td>{r.pendingCases}</td>
                         <td>{r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}</td>
                         <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => setSelected(r)}>
-                            View
+                          <button className="btn btn-dark btn-sm btn-icon" onClick={() => setSelected(r)} title="View" aria-label="View">
+                            <Eye size={14} />
                           </button>
                         </td>
                       </tr>
@@ -579,12 +640,15 @@ function AllCitizensPanel() {
         <div className="panel-header">
           <h2>All registered citizens</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-                placeholder="Search name, ref, phone, email…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-            />
+            <div className="search-input-wrap">
+              <SearchIcon size={13} className="search-input-icon" />
+              <input
+                  placeholder="Citizen name"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+              />
+            </div>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -592,7 +656,9 @@ function AllCitizensPanel() {
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         </div>
         {(detailLoading || detail) && (
@@ -635,7 +701,7 @@ function AllCitizensPanel() {
                         <td>{c.idProofType}</td>
                         <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
                         <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => viewDetail(c.referenceNumber)}>
+                          <button className="btn btn-warning btn-sm" onClick={() => viewDetail(c.referenceNumber)}>
                             View ID
                           </button>
                         </td>
