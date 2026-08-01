@@ -6,12 +6,14 @@ import RecordCard from '../components/RecordCard';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import MyProfilePanel from '../components/MyProfilePanel';
 import {
   IdCard, Users, FileText, UserCircle,
   Check, X, Award, Download,
   Clock, BadgeCheck, FileCheck2,
   UserPlus, List,
   FilePlus, FileEdit, History as HistoryIcon, Files,
+  RefreshCw, Search,
 } from 'lucide-react';
 
 const SECTIONS = [
@@ -39,7 +41,6 @@ const SECTIONS = [
       { key: 'all', label: 'All records', icon: Files },
     ],
   },
-  { key: 'profile', label: 'Profile', icon: UserCircle },
 ];
 
 export default function OfficerDashboard() {
@@ -54,52 +55,72 @@ export default function OfficerDashboard() {
   };
 
   return (
-    <DashboardLayout
-      subtitle="Officer Console"
-      sections={SECTIONS}
-      active={section}
-      activeSub={sub}
-      onChange={changeSection}
-      onChangeSub={setSub}
-    >
-      <div className="page-header">
-        <h1>Police officer console</h1>
-        <p>Verify citizen KYC, register new citizens, and manage police records.</p>
-      </div>
+      <DashboardLayout
+          subtitle="Officer Console"
+          sections={SECTIONS}
+          active={section}
+          activeSub={sub}
+          onChange={changeSection}
+          onChangeSub={setSub}
+      >
+        <div className="page-header">
+          <h1>Police officer console</h1>
+          <p>Verify citizen KYC, register new citizens, and manage police records.</p>
+        </div>
 
-      {section === 'kyc' && sub === 'pending' && <PendingKycPanel />}
-      {section === 'kyc' && sub === 'verified' && <VerifiedKycPanel />}
-      {section === 'kyc' && sub === 'certified' && <CertifiedKycPanel />}
+        {section === 'kyc' && sub === 'pending' && <PendingKycPanel />}
+        {section === 'kyc' && sub === 'verified' && <VerifiedKycPanel />}
+        {section === 'kyc' && sub === 'certified' && <CertifiedKycPanel />}
 
-      {section === 'citizens' && sub === 'register' && <RegisterCitizenPanel />}
-      {section === 'citizens' && sub === 'all' && <AllCitizensPanel />}
+        {section === 'citizens' && sub === 'register' && <RegisterCitizenPanel />}
+        {section === 'citizens' && sub === 'all' && <AllCitizensPanel />}
 
-      {section === 'records' && sub === 'create' && <RecordsPanel mode="create" />}
-      {section === 'records' && sub === 'update' && <RecordsPanel mode="update" />}
-      {section === 'records' && sub === 'history' && <RecordHistoryPanel />}
-      {section === 'records' && sub === 'all' && <AllRecordsPanel />}
+        {section === 'records' && sub === 'create' && <RecordsPanel mode="create" />}
+        {section === 'records' && sub === 'update' && <RecordsPanel mode="update" />}
+        {section === 'records' && sub === 'history' && <RecordHistoryPanel />}
+        {section === 'records' && sub === 'all' && <AllRecordsPanel />}
 
-      {section === 'profile' && <ProfilePanel />}
-    </DashboardLayout>
+        {section === 'profile' && <MyProfilePanel />}
+      </DashboardLayout>
   );
 }
 
 function ProfilePanel() {
   const { user } = useAuth();
   if (!user) return null;
+
   return (
-    <div className="panel">
-      <div className="panel-header"><h2>My profile</h2></div>
-      <div className="panel-body">
-        <div className="detail-grid">
-          <div className="detail-item"><label>Full name</label><div>{user.fullName}</div></div>
-          <div className="detail-item"><label>Username</label><div>{user.username}</div></div>
-          <div className="detail-item"><label>Role</label><div><StatusBadge status={user.role} /></div></div>
-          {user.badgeNumber && <div className="detail-item"><label>Badge number</label><div>{user.badgeNumber}</div></div>}
-          {user.stationCode && <div className="detail-item"><label>Station code</label><div>{user.stationCode}</div></div>}
+      <div className="panel">
+        <div className="panel-header"><h2>My profile</h2></div>
+        <div className="panel-body">
+          <div className="detail-grid">
+            <div className="detail-item">
+              <label>Full name</label>
+              <div>{user.fullName || '—'}</div>
+            </div>
+            <div className="detail-item">
+              <label>Username</label>
+              <div>{user.username || '—'}</div>
+            </div>
+            <div className="detail-item">
+              <label>Email</label>
+              <div>{user.email || '—'}</div>
+            </div>
+            <div className="detail-item">
+              <label>Role</label>
+              <div><StatusBadge status={user.role} /></div>
+            </div>
+            <div className="detail-item">
+              <label>Badge number</label>
+              <div>{user.badgeNumber || '—'}</div>
+            </div>
+            <div className="detail-item">
+              <label>Station code</label>
+              <div>{user.stationCode || '—'}</div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 }
 
@@ -164,12 +185,15 @@ function PendingKycPanel() {
         <div className="panel-header">
           <h2>Pending KYC requests</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-                placeholder="Search citizen or request…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-            />
+            <div className="search-input-wrap">
+              <Search size={13} className="search-input-icon" />
+              <input
+                  placeholder="Citizen name"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+              />
+            </div>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -177,7 +201,9 @@ function PendingKycPanel() {
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         </div>
         <div className="panel-body" style={{ padding: 0 }}>
@@ -295,12 +321,15 @@ function VerifiedKycPanel() {
         <div className="panel-header">
           <h2>Verified KYC requests</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-                placeholder="Search citizen or request…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-            />
+            <div className="search-input-wrap">
+              <Search size={13} className="search-input-icon" />
+              <input
+                  placeholder="Citizen name"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+              />
+            </div>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -308,7 +337,9 @@ function VerifiedKycPanel() {
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         </div>
         <div className="panel-body" style={{ padding: 0 }}>
@@ -414,12 +445,15 @@ function CertifiedKycPanel() {
         <div className="panel-header">
           <h2>Certified KYC requests</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-                placeholder="Search citizen or request…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-            />
+            <div className="search-input-wrap">
+              <Search size={13} className="search-input-icon" />
+              <input
+                  placeholder="Citizen name"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+              />
+            </div>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -427,7 +461,9 @@ function CertifiedKycPanel() {
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         </div>
         <div className="panel-body" style={{ padding: 0 }}>
@@ -451,8 +487,8 @@ function CertifiedKycPanel() {
                         </td>
                         <td>{r.verifiedAt ? new Date(r.verifiedAt).toLocaleDateString() : '—'}</td>
                         <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => findAndDownload(r)}>
-                            <Download size={13} /> Download PDF
+                          <button className="btn btn-info-light btn-sm btn-icon" onClick={() => findAndDownload(r)} title="Download PDF" aria-label="Download PDF">
+                            <Download size={14} />
                           </button>
                         </td>
                       </tr>
@@ -600,13 +636,13 @@ function RecordsPanel({ mode }) {
               {mode === 'create' && (
                   <div className="field">
                     <label>Citizen reference number</label>
-                    <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-20260702115022-E67DD2" />
+                    <input required value={form.citizenReferenceNumber} onChange={set('citizenReferenceNumber')} placeholder="CIT-*****" />
                   </div>
               )}
               {mode === 'update' && (
                   <div className="field">
                     <label>Existing record ID</label>
-                    <input required value={form.existingRecordId} onChange={set('existingRecordId')} placeholder="REC-20260705120859-F95EF4" />
+                    <input required value={form.existingRecordId} onChange={set('existingRecordId')} placeholder="REC-*****" />
                   </div>
               )}
               <div className="field">
@@ -693,7 +729,7 @@ function RecordHistoryPanel() {
           <form onSubmit={viewHistory} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
             <div className="field" style={{ marginBottom: 0, minWidth: 260, flex: 1 }}>
               <label>Record ID</label>
-              <input value={historyId} onChange={(e) => setHistoryId(e.target.value)} placeholder="REC-20260705120859-F95EF4" />
+              <input value={historyId} onChange={(e) => setHistoryId(e.target.value)} placeholder="REC-*****" />
             </div>
             <button className="btn btn-secondary" type="submit" disabled={historyLoading}>
               <HistoryIcon size={14} />
@@ -769,12 +805,15 @@ function AllCitizensPanel() {
         <div className="panel-header">
           <h2>All registered citizens</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-                placeholder="Search name, ref, phone, email…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
-            />
+            <div className="search-input-wrap">
+              <Search size={13} className="search-input-icon" />
+              <input
+                  placeholder="name, ref, phone, email"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 200 }}
+              />
+            </div>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -782,7 +821,9 @@ function AllCitizensPanel() {
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         </div>
         {(detailLoading || detail) && (
@@ -825,7 +866,7 @@ function AllCitizensPanel() {
                         <td>{c.idProofType}</td>
                         <td>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</td>
                         <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => viewDetail(c.referenceNumber)}>
+                          <button className="btn btn-warning btn-sm" onClick={() => viewDetail(c.referenceNumber)}>
                             View ID
                           </button>
                         </td>
@@ -884,12 +925,15 @@ function AllRecordsPanel() {
         <div className="panel-header">
           <h2>All records</h2>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-                placeholder="Search citizen, record, officer…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ padding: '6px 9px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
-            />
+            <div className="search-input-wrap">
+              <Search size={13} className="search-input-icon" />
+              <input
+                  placeholder="citizen, record, officer, type"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  style={{ padding: '6px 9px 6px 28px', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', fontSize: 12.5, width: 220 }}
+              />
+            </div>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm"
@@ -897,7 +941,9 @@ function AllRecordsPanel() {
             >
               Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         </div>
         <div className="panel-body" style={{ padding: 0 }}>
