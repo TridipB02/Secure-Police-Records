@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
+import DashboardLayout from '../components/DashboardLayout';
 import LedgerTag from '../components/LedgerTag';
 import RecordCard from '../components/RecordCard';
 import TamperAlert from '../components/TamperAlert';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
-
-const TABS = ['Tamper detection', 'Audit logs', 'Record history'];
+import { useAuth } from '../context/AuthContext';
+import StatusBadge from '../components/StatusBadge';
+import MyProfilePanel from '../components/MyProfilePanel';
+import {
+  ShieldCheck, FileSearch, History as HistoryIcon,
+  FileText, ShieldAlert as ShieldAlertIcon, Users, User,
+} from 'lucide-react';
 
 const ACTION_TYPES = [
   'KYC_SUBMITTED', 'KYC_VERIFIED', 'ANTECEDENT_SUBMITTED',
@@ -15,38 +20,86 @@ const ACTION_TYPES = [
   'RECORD_CREATED', 'RECORD_UPDATED',
 ];
 
+const SECTIONS = [
+  {
+    key: 'tamper', label: 'Tamper detection', icon: ShieldCheck,
+    subsections: [
+      { key: 'record', label: 'Police record', icon: FileText },
+      { key: 'antecedent', label: 'Antecedent report', icon: ShieldAlertIcon },
+    ],
+  },
+  {
+    key: 'audit', label: 'Audit logs', icon: FileSearch,
+    subsections: [
+      { key: 'staff', label: 'Staff activity', icon: Users },
+      { key: 'citizen', label: 'Citizen activity', icon: User },
+    ],
+  },
+  { key: 'history', label: 'Record history', icon: HistoryIcon },
+];
+
 export default function AuditDashboard() {
-  const [tab, setTab] = useState(TABS[0]);
+  const [section, setSection] = useState('tamper');
+  const [sub, setSub] = useState('record');
+
+  const changeSection = (key) => {
+    setSection(key);
+    const found = SECTIONS.find((s) => s.key === key);
+    if (found?.subsections) setSub(found.subsections[0].key);
+    else setSub(null);
+  };
 
   return (
-      <>
-        <Navbar subtitle="Audit & Integrity" />
-        <main className="main">
-          <div className="page-header">
-            <h1>Audit officer console</h1>
-            <p>Verify record integrity, review the audit trail, and inspect version history.</p>
-          </div>
-          <div className="tabs">
-            {TABS.map((t) => (
-                <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                  {t}
-                </button>
-            ))}
-          </div>
-          {tab === 'Tamper detection' && <TamperPanel />}
-          {tab === 'Audit logs' && <AuditLogsPanel />}
-          {tab === 'Record history' && <RecordHistoryPanel />}
-        </main>
-      </>
+      <DashboardLayout
+          subtitle="Audit & Integrity"
+          sections={SECTIONS}
+          active={section}
+          activeSub={sub}
+          onChange={changeSection}
+          onChangeSub={setSub}
+      >
+        <div className="page-header">
+          <h1>Audit officer console</h1>
+          <p>Verify record integrity, review the audit trail, and inspect version history.</p>
+        </div>
+
+        {section === 'tamper' && <TamperPanel checkType={sub} />}
+        {section === 'audit' && <AuditLogsPanel audience={sub} />}
+        {section === 'history' && <RecordHistoryPanel />}
+        {section === 'profile' && <MyProfilePanel />}
+      </DashboardLayout>
   );
 }
 
-function TamperPanel() {
-  const [checkType, setCheckType] = useState('record');
+function ProfilePanel() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+      <div className="panel">
+        <div className="panel-header"><h2>My profile</h2></div>
+        <div className="panel-body">
+          <div className="detail-grid">
+            <div className="detail-item"><label>Full name</label><div>{user.fullName || '—'}</div></div>
+            <div className="detail-item"><label>Username</label><div>{user.username || '—'}</div></div>
+            <div className="detail-item"><label>Email</label><div>{user.email || '—'}</div></div>
+            <div className="detail-item"><label>Role</label><div><StatusBadge status={user.role} /></div></div>
+          </div>
+        </div>
+      </div>
+  );
+}
+
+function TamperPanel({ checkType }) {
   const [recordId, setRecordId] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+
+  useEffect(() => {
+    setResult(null);
+    setRecordId('');
+    // eslint-disable-next-line
+  }, [checkType]);
 
   const runCheck = async (e) => {
     e.preventDefault();
@@ -74,28 +127,12 @@ function TamperPanel() {
         <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 16px' }}>
           Compares the database hash against the hash anchored on the blockchain.
         </p>
-        <div className="tabs" style={{ marginBottom: 16 }}>
-          <button
-              type="button"
-              className={`tab ${checkType === 'record' ? 'active' : ''}`}
-              onClick={() => { setCheckType('record'); setResult(null); setRecordId(''); }}
-          >
-            Police record
-          </button>
-          <button
-              type="button"
-              className={`tab ${checkType === 'antecedent' ? 'active' : ''}`}
-              onClick={() => { setCheckType('antecedent'); setResult(null); setRecordId(''); }}
-          >
-            Antecedent report
-          </button>
-        </div>
         <form onSubmit={runCheck} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div className="field" style={{ marginBottom: 0, minWidth: 260, flex: 1 }}>
             <label htmlFor="recordId">{checkType === 'antecedent' ? 'Report ID' : 'Record ID'}</label>
             <input
                 id="recordId"
-                placeholder={checkType === 'antecedent' ? 'ANT-20260705120859-F95EF4' : 'REC-20260705120859-F95EF4'}
+                placeholder={checkType === 'antecedent' ? 'ANT-*****' : 'REC-*****'}
                 value={recordId}
                 onChange={(e) => setRecordId(e.target.value)}
             />
@@ -111,14 +148,13 @@ function TamperPanel() {
   );
 }
 
-function AuditLogsPanel() {
+function AuditLogsPanel({ audience }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('');
   const [showingMine, setShowingMine] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchText, setSearchText] = useState('');
-  const [audience, setAudience] = useState('staff'); // 'staff' | 'citizen'
   const toast = useToast();
 
   const load = async (action, mine) => {
@@ -149,45 +185,27 @@ function AuditLogsPanel() {
   };
 
   const displayedLogs = logs
-    .filter((log) => (audience === 'citizen' ? log.actorRole === 'CITIZEN' : log.actorRole !== 'CITIZEN'))
-    .filter((log) => {
-      if (!searchText.trim()) return true;
-      const q = searchText.trim().toLowerCase();
-      return (
-        (log.actorName || '').toLowerCase().includes(q) ||
-        (log.resourceId || '').toLowerCase().includes(q) ||
-        (log.actionType || '').toLowerCase().includes(q) ||
-        (log.details || '').toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+      .filter((log) => (audience === 'citizen' ? log.actorRole === 'CITIZEN' : log.actorRole !== 'CITIZEN'))
+      .filter((log) => {
+        if (!searchText.trim()) return true;
+        const q = searchText.trim().toLowerCase();
+        return (
+            (log.actorName || '').toLowerCase().includes(q) ||
+            (log.resourceId || '').toLowerCase().includes(q) ||
+            (log.actionType || '').toLowerCase().includes(q) ||
+            (log.details || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+      });
 
   return (
       <div className="panel">
         <div className="panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2>Audit trail</h2>
-            <div className="tabs" style={{ marginBottom: 0 }}>
-              <button
-                  type="button"
-                  className={`tab ${audience === 'staff' ? 'active' : ''}`}
-                  onClick={() => setAudience('staff')}
-              >
-                Staff activity
-              </button>
-              <button
-                  type="button"
-                  className={`tab ${audience === 'citizen' ? 'active' : ''}`}
-                  onClick={() => setAudience('citizen')}
-              >
-                Citizen activity
-              </button>
-            </div>
-          </div>
+          <h2>{audience === 'citizen' ? 'Citizen activity' : 'Staff activity'}</h2>
           <form onSubmit={handleFilter} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
                 placeholder="Search actor, resource, action…"
@@ -203,6 +221,7 @@ function AuditLogsPanel() {
               <option value="">All action types</option>
               {ACTION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
+
             <button className="btn btn-secondary btn-sm" type="submit">Filter</button>
             <button
                 type="button"
@@ -311,7 +330,7 @@ function RecordHistoryPanel() {
                 <label htmlFor="histRecordId">Record ID</label>
                 <input
                     id="histRecordId"
-                    placeholder="REC-20260705120859-F95EF4"
+                    placeholder="REC-*****"
                     value={recordId}
                     onChange={(e) => setRecordId(e.target.value)}
                 />
