@@ -1,16 +1,27 @@
 import { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
+import DashboardLayout from '../components/DashboardLayout';
 import LedgerTag from '../components/LedgerTag';
 import StatusBadge from '../components/StatusBadge';
 import api, { unwrap, apiErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import {
+  IdCard, Crosshair, Award, RefreshCw, Fingerprint,
+  ShieldCheck, Download,
+} from 'lucide-react';
 
-const TABS = ['KYC', 'Firearm license', 'Certificates'];
+const SECTIONS = [
+  { key: 'kyc', label: 'KYC', icon: IdCard },
+  { key: 'biometric', label: 'Biometric', icon: Fingerprint },
+  { key: 'firearm', label: 'Firearm license', icon: Crosshair },
+  { key: 'certificates', label: 'Certificates', icon: Award },
+];
 
 export default function CitizenDashboard() {
-  const [tab, setTab] = useState(TABS[0]);
+  const [section, setSection] = useState('kyc');
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [biometricVerified, setBiometricVerified] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -26,59 +37,79 @@ export default function CitizenDashboard() {
       }
     };
     loadProfile();
-    // eslint-disable-next-line
+    
   }, []);
 
   return (
-      <>
-        <Navbar subtitle="Citizen Portal" />
-        <main className="main">
-          <div className="page-header">
-            <h1>Citizen portal</h1>
-            <p>Submit KYC, apply for a firearm license, and track your certificates.</p>
-          </div>
+      <DashboardLayout
+          subtitle="Citizen Portal"
+          sections={SECTIONS}
+          active={section}
+          activeSub={null}
+          onChange={setSection}
+          onChangeSub={() => {}}
+      >
+        <div className="page-header">
+          <h1>Citizen portal</h1>
+          <p>Submit KYC, apply for a firearm license, and track your certificates.</p>
+        </div>
 
-          <div className="panel" style={{ marginBottom: 18 }}>
-            <div className="panel-body" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-              {profileLoading ? (
-                  <span className="spinner dark" />
-              ) : profile ? (
-                  <>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>
-                        Your citizen reference number
-                      </div>
-                      <LedgerTag>{profile.referenceNumber}</LedgerTag>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>
-                        Full name
-                      </div>
-                      <div style={{ fontWeight: 500 }}>{profile.fullName}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>
-                        {profile.idProofType || 'ID Proof'}
-                      </div>
-                      <div style={{ fontWeight: 500 }}>{profile.idProofNumber}</div>
-                    </div>
-                  </>
-              ) : (
-                  <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Profile unavailable.</div>
-              )}
-            </div>
+        <div className="panel" style={{ marginBottom: 18 }}>
+          <div className="panel-header"><h2>My profile</h2></div>
+          <div className="panel-body">
+            {profileLoading ? (
+                <span className="spinner dark" />
+            ) : profile ? (
+                <div className="detail-grid">
+                  <div className="detail-item"><label>Reference number</label><div><LedgerTag>{profile.referenceNumber}</LedgerTag></div></div>
+                  <div className="detail-item"><label>Full name</label><div>{profile.fullName || '—'}</div></div>
+                  <div className="detail-item"><label>Date of birth</label><div>{profile.dateOfBirth || '—'}</div></div>
+                  <div className="detail-item"><label>Address</label><div>{profile.address || '—'}</div></div>
+                  <div className="detail-item"><label>Phone</label><div>{profile.phone || '—'}</div></div>
+                  <div className="detail-item"><label>Email</label><div>{profile.email || '—'}</div></div>
+                  <div className="detail-item"><label>{profile.idProofType || 'ID proof'}</label><div>{profile.idProofNumber || '—'}</div></div>
+                </div>
+            ) : (
+                <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Profile unavailable.</div>
+            )}
           </div>
+        </div>
 
-          <div className="tabs">
-            {TABS.map((t) => (
-                <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>{t}</button>
-            ))}
+        {section === 'kyc' && <KycPanel profile={profile} />}
+        {section === 'firearm' && (
+            <FirearmPanel
+                profile={profile}
+                biometricVerified={biometricVerified}
+                onGoToBiometric={() => setSection('biometric')}
+            />
+        )}
+        {section === 'biometric' && (
+            <BiometricPanel
+                biometricVerified={biometricVerified}
+                setBiometricVerified={setBiometricVerified}
+            />
+        )}
+        {section === 'certificates' && <CertificatesPanel profile={profile} />}
+        {section === 'profile' && <MyProfilePanel />}
+      </DashboardLayout>
+  );
+}
+
+function MyProfilePanel() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+      <div className="panel">
+        <div className="panel-header"><h2>My profile</h2></div>
+        <div className="panel-body">
+          <div className="detail-grid">
+            <div className="detail-item"><label>Full name</label><div>{user.fullName || '—'}</div></div>
+            <div className="detail-item"><label>Username</label><div>{user.username || '—'}</div></div>
+            <div className="detail-item"><label>Email</label><div>{user.email || '—'}</div></div>
+            <div className="detail-item"><label>Role</label><div><StatusBadge status={user.role} /></div></div>
           </div>
-          {tab === 'KYC' && <KycPanel profile={profile} />}
-          {tab === 'Firearm license' && <FirearmPanel profile={profile} />}
-          {tab === 'Certificates' && <CertificatesPanel profile={profile} />}
-        </main>
-      </>
+        </div>
+      </div>
   );
 }
 
@@ -137,7 +168,9 @@ function KycPanel({ profile }) {
         <div className="panel">
           <div className="panel-header">
             <h2>Your KYC requests</h2>
-            <button className="btn btn-secondary btn-sm" onClick={loadRequests}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={loadRequests} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
           <div className="panel-body" style={{ padding: 0 }}>
             {listLoading ? (
@@ -171,18 +204,12 @@ function KycPanel({ profile }) {
   );
 }
 
-function FirearmPanel({ profile }) {
+function FirearmPanel({ profile, biometricVerified, onGoToBiometric }) {
   const [form, setForm] = useState({ weaponType: 'PISTOL', purpose: '' });
   const [loading, setLoading] = useState(false);
   const [apps, setApps] = useState([]);
   const [listLoading, setListLoading] = useState(true);
-  const [biometricStatus, setBiometricStatus] = useState('idle');
   const toast = useToast();
-
-  const runBiometricScan = () => {
-    setBiometricStatus('scanning');
-    setTimeout(() => setBiometricStatus('verified'), 1500);
-  };
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -204,7 +231,7 @@ function FirearmPanel({ profile }) {
   const apply = async (e) => {
     e.preventDefault();
     if (!profile) return;
-    if (biometricStatus !== 'verified') {
+    if (!biometricVerified) {
       toast.error('Biometric verification required', 'Please complete the biometric scan before submitting.');
       return;
     }
@@ -218,7 +245,6 @@ function FirearmPanel({ profile }) {
       const data = unwrap(res);
       toast.success('Application submitted', data.applicationNumber);
       setForm({ weaponType: 'PISTOL', purpose: '' });
-      setBiometricStatus('idle');
       loadApps();
     } catch (err) {
       toast.error('Application failed', apiErrorMessage(err));
@@ -246,28 +272,18 @@ function FirearmPanel({ profile }) {
                 <label>Purpose</label>
                 <textarea required rows={3} value={form.purpose} onChange={set('purpose')} placeholder="Self defense due to security threat" />
               </div>
-              <div style={{ padding: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginBottom: 14, background: 'var(--surface-raised)' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Biometric Verification (Simulated)</div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', marginBottom: 10 }}>
-                  Simulates Aadhaar-based fingerprint authentication. Not a real biometric capture — see project documentation.
-                </div>
-                {biometricStatus === 'idle' && (
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={runBiometricScan}>
-                      Simulate Fingerprint Scan
+
+              <div className={`biometric-status-strip ${biometricVerified ? 'biometric-status-strip--ok' : ''}`}>
+                <Fingerprint size={16} />
+                <span>{biometricVerified ? 'Biometric verified' : 'Biometric verification required'}</span>
+                {!biometricVerified && (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={onGoToBiometric}>
+                      Go to biometric scan
                     </button>
                 )}
-                {biometricStatus === 'scanning' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
-                      <span className="spinner dark" /> Scanning fingerprint…
-                    </div>
-                )}
-                {biometricStatus === 'verified' && (
-                    <div style={{ fontSize: 12.5, color: 'var(--status-green)', fontWeight: 600 }}>
-                      ✓ Biometric match confirmed
-                    </div>
-                )}
               </div>
-              <button className="btn" type="submit" disabled={loading || !profile || biometricStatus !== 'verified'}>
+
+              <button className="btn" type="submit" disabled={loading || !profile || !biometricVerified} style={{ marginTop: 14 }}>
                 {loading && <span className="spinner" />}
                 {loading ? 'Submitting…' : 'Submit application'}
               </button>
@@ -278,7 +294,9 @@ function FirearmPanel({ profile }) {
         <div className="panel">
           <div className="panel-header">
             <h2>Your applications</h2>
-            <button className="btn btn-secondary btn-sm" onClick={loadApps}>Refresh</button>
+            <button className="btn btn-secondary btn-sm btn-icon" onClick={loadApps} title="Refresh" aria-label="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
           <div className="panel-body" style={{ padding: 0 }}>
             {listLoading ? (
@@ -315,6 +333,123 @@ function FirearmPanel({ profile }) {
           </div>
         </div>
       </div>
+  );
+}
+
+function BiometricPanel({ biometricVerified, setBiometricVerified }) {
+  const [status, setStatus] = useState(biometricVerified ? 'verified' : 'idle');
+  const [progress, setProgress] = useState(biometricVerified ? 100 : 0);
+
+  const runScan = () => {
+    setStatus('scanning');
+    setProgress(0);
+
+    const totalDuration = 2400;
+    const stepMs = 40;
+    const steps = totalDuration / stepMs;
+    let current = 0;
+
+    const interval = setInterval(() => {
+      current += 1;
+      const pct = Math.min(100, Math.round((current / steps) * 100));
+      setProgress(pct);
+      if (pct >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setStatus('verified');
+          setBiometricVerified(true);
+        }, 200);
+      }
+    }, stepMs);
+  };
+
+  const rescan = () => {
+    setBiometricVerified(false);
+    setStatus('idle');
+    setProgress(0);
+  };
+
+  return (
+      <div className="panel">
+        <div className="panel-header"><h2>Biometric verification</h2></div>
+        <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px' }}>
+
+          <div className="thumb-scan-wrap">
+            <Fingerprint className="thumb-scan-base" strokeWidth={1.4} />
+            <div className="thumb-scan-fill-clip" style={{ height: `${progress}%` }}>
+              <Fingerprint className="thumb-scan-fill" strokeWidth={1.4} />
+            </div>
+            {status === 'scanning' && <div className="thumb-scan-line" />}
+          </div>
+
+          <div style={{ marginTop: 22, textAlign: 'center' }}>
+            {status === 'idle' && (
+                <>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 12 }}>Ready to scan</div>
+                  <button type="button" className="btn" onClick={runScan}>
+                    Place finger to scan
+                  </button>
+                </>
+            )}
+            {status === 'scanning' && (
+                <>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 4 }}>Scanning… {progress}%</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-soft)' }}>Matching against Aadhaar biometric database…</div>
+                </>
+            )}
+            {status === 'verified' && (
+                <>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--status-green)', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginBottom: 12 }}>
+                    <ShieldCheck size={16} /> Biometric match confirmed
+                  </div>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={rescan}>
+                    Re-scan
+                  </button>
+                </>
+            )}
+          </div>
+        </div>
+      </div>
+  );
+}
+
+function FingerprintGraphic({ className }) {
+  return (
+      <svg className={className} viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none">
+          <path d="M100 50c-7 0-13 3-13 9s6 9 13 9 13-4 13-10-6-8-13-8z" />
+          <path d="M100 38c-14 0-25 6-25 17s11 16 25 16 25-7 25-18-11-15-25-15z" />
+          <path d="M100 27c-19 0-34 8-34 23s15 22 34 22 34-9 34-24-15-21-34-21z" />
+          <path d="M100 16c-25 0-44 11-44 30s19 28 44 28 44-12 44-31-19-27-44-27z" />
+
+          <path d="M72 62c-6 8-10 18-10 30 0 14 4 26 12 37" />
+          <path d="M64 55c-8 10-13 24-13 39 0 18 5 33 15 47" />
+          <path d="M56 48c-10 13-16 30-16 49 0 22 7 40 19 57" />
+          <path d="M48 41c-11 15-18 35-18 58 0 25 8 47 22 66" />
+          <path d="M40 34c-13 17-21 40-21 66 0 29 9 54 25 76" />
+
+          <path d="M128 62c6 8 10 18 10 30 0 14-4 26-12 37" />
+          <path d="M136 55c8 10 13 24 13 39 0 18-5 33-15 47" />
+          <path d="M144 48c10 13 16 30 16 49 0 22-7 40-19 57" />
+          <path d="M152 41c11 15 18 35 18 58 0 25-8 47-22 66" />
+          <path d="M160 34c13 17 21 40 21 66 0 29-9 54-25 76" />
+
+          <path d="M88 78c-3 6-4 13-4 21 0 10 3 19 8 27" />
+          <path d="M112 78c3 6 4 13 4 21 0 10-3 19-8 27" />
+
+          <path d="M80 100c-3 8-4 17-4 27 0 13 3 24 9 34" />
+          <path d="M120 100c3 8 4 17 4 27 0 13-3 24-9 34" />
+
+          <path d="M100 145l10-16 10 16" />
+
+          <path d="M74 156c-2 8-3 16-3 25" />
+          <path d="M126 156c2 8 3 16 3 25" />
+
+          <path d="M64 172c11 12 23 18 36 18s25-6 36-18" />
+          <path d="M54 184c14 15 29 22 46 22s32-7 46-22" />
+          <path d="M44 194c17 17 34 25 56 25s39-8 56-25" />
+        </g>
+      </svg>
   );
 }
 
@@ -357,7 +492,9 @@ function CertificatesPanel({ profile }) {
       <div className="panel">
         <div className="panel-header">
           <h2>Your certificates</h2>
-          <button className="btn btn-secondary btn-sm" onClick={load}>Refresh</button>
+          <button className="btn btn-secondary btn-sm btn-icon" onClick={load} title="Refresh" aria-label="Refresh">
+            <RefreshCw size={14} />
+          </button>
         </div>
         <div className="panel-body">
           {loading ? (
@@ -394,9 +531,11 @@ function CertificatesPanel({ profile }) {
                                 <div className="detail-item"><label>Issue date</label><div>{c.issueDate ? new Date(c.issueDate).toLocaleDateString() : '—'}</div></div>
                                 <div className="detail-item"><label>Expiry</label><div>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : '—'}</div></div>
                               </div>
-                              <button className="btn btn-secondary btn-sm" style={{ width: '100%' }} onClick={() => downloadPdf(c.certificateId)}>
-                                Download PDF
-                              </button>
+                              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                                <button className="btn btn-info-light btn-sm btn-icon" onClick={() => downloadPdf(c.certificateId)} title="Download PDF" aria-label="Download PDF">
+                                  <Download size={14} />
+                                </button>
+                              </div>
                             </>
                         )}
                       </div>
